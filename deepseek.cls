@@ -19,7 +19,7 @@
 
 %%======== Packages Required ========
 % Fonts and language
-\AtEndOfClass{\RequirePackage[tracking=smallcaps]{microtype}}
+\AtEndOfClass{\RequirePackage[tracking=smallcaps,nopatch=footnote]{microtype}}
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[english]{babel}
 \RequirePackage{amsthm, amsmath, amsfonts, amssymb}
