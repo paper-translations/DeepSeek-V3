@@ -20,11 +20,8 @@
 %%======== Packages Required ========
 % Fonts and language
 \AtEndOfClass{\RequirePackage[tracking=smallcaps,nopatch=footnote]{microtype}}
-\RequirePackage[utf8]{inputenc}
 \RequirePackage[english]{babel}
 \RequirePackage{amsthm, amsmath, amsfonts, amssymb}
-\RequirePackage{cmap}
-\RequirePackage[T1]{fontenc}
 % JH: switched to xurl from url due to wrapping issues. This fixes it. For example, the Megatron-Turing NLG link
 \RequirePackage{xurl}
 % \RequirePackage[colorlinks=true, allcolors=blue]{hyperref}  % cite is blue

@@ -1,4 +1,5 @@
 \documentclass[11pt, a4paper, logo, copyright, nonumbering]{deepseek}
+\usepackage{xeCJK}
 \usepackage[authoryear, sort&compress, round]{natbib}
 \usepackage{ulem}
 \usepackage{caption}
@@ -21,7 +22,6 @@
 \usepackage[bottom]{footmisc}
 % \linenumbers
 
-\usepackage{CJKutf8}
 \usepackage{subfigure}
 \usepackage{setspace}
 
@@ -38,6 +38,21 @@
 \usepackage{multicol} % 引入 multicol 宏包
 
 % \usepackage[finalizecache,cachedir=.]{minted}
+
+\setCJKmainfont[
+  BoldFont=FZHei-B01,
+  ItalicFont=FZKai-Z03,
+  BoldItalicFont=FZFangSong-Z02,
+  SmallCapsFont=FZShuSong-Z01
+]{FZShuSong-Z01}
+\setCJKsansfont[AutoFakeBold=1.2, AutoFakeSlant=0.15]{FZHei-B01}
+\setCJKmonofont[AutoFakeBold=1.2, AutoFakeSlant=0.15]{FZHei-B01}
+\setmainfont{Times New Roman}
+\setmonofont[AutoFakeBold=1.2]{LMMono10}  % or 'Fira Mono'
+\setstretch{1.2}
+\captionsetup{font={small,it,stretch=1.2}}
+\let\oldfootnotesize\footnotesize
+\renewcommand{\footnotesize}{\oldfootnotesize\itshape}
 
 \makeatletter
 \def\@BTrule[#1]{%
@@ -124,11 +139,10 @@ The model checkpoints are available at \url{https://github.com/deepseek-ai/DeepS
 \end{abstract}
 
 \begin{document}
-\begin{CJK*}{UTF8}{gbsn}
 
 \maketitle
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/dsv3_performance.pdf}
 \caption{
@@ -739,7 +753,7 @@ For auxiliary-loss-free load balancing, we set the bias update speed $\gamma$ to
 For the balance loss, we set $\alpha$ to 0.0001, just to avoid extreme imbalance within any single sequence. 
 The MTP loss weight $\lambda$ is set to 0.3 for the first 10T tokens, and to 0.1 for the remaining 4.8T tokens. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/needle_in_a_haystack.pdf}
 \caption{
@@ -818,7 +832,7 @@ As for English and Chinese language benchmarks, \dsviii{}-Base shows competitive
 Due to our efficient architectures and comprehensive engineering optimizations, \dsviii{} achieves extremely high training efficiency. 
 Under our training framework and infrastructures, training \dsviii{} on each trillion tokens requires only 180K H800 GPU hours, which is much cheaper than training 72B or 405B dense models. 
 
-\begin{table}[h]
+\begin{table}[ht]
     \centering
     \footnotesize
     \setlength{\tabcolsep}{8pt}
@@ -1530,6 +1544,5 @@ The auxiliary-loss-free model tends to have greater expert specialization across
 
 \newpage
 
-\end{CJK*}
-\end{document} 
+\end{document}
 
