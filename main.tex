@@ -108,7 +108,7 @@
 % DeepSeek-V3
 \newcommand{\dsviii}{DeepSeek-V3}
 
-\title{\centering \dsviii{} Technical Report}
+\title{\centering \dsviii{} 技术报告}
 
 \author[*]{
 DeepSeek-AI
@@ -126,15 +126,15 @@ DeepSeek-AI
 
 \begin{abstract}
 
-We present \dsviii{}, a strong Mixture-of-Experts~(MoE) language model with 671B total parameters with 37B activated for each token. 
-To achieve efficient inference and cost-effective training, \dsviii{} adopts Multi-head Latent Attention~(MLA) and \dsmoe{} architectures, which were thoroughly validated in \dsvii{}. 
-Furthermore, \dsviii{} pioneers an auxiliary-loss-free strategy for load balancing and sets a multi-token prediction training objective for stronger performance. 
-We pre-train \dsviii{} on 14.8 trillion diverse and high-quality tokens, followed by Supervised Fine-Tuning and Reinforcement Learning stages to fully harness its capabilities. 
-Comprehensive evaluations reveal that \dsviii{} outperforms other open-source models and achieves performance comparable to leading closed-source models.
-Despite its excellent performance, \dsviii{} requires only 2.788M H800 GPU hours for its full training.
-In addition, its training process is remarkably stable. 
-Throughout the entire training process, we did not experience any irrecoverable loss spikes or perform any rollbacks. 
-The model checkpoints are available at \url{https://github.com/deepseek-ai/DeepSeek-V3}. 
+我们介绍 \dsviii{}，这是一个强大的 Mixture-of-Experts~(MoE) 语言模型，总参数量为 671B，每个 token 激活 37B 参数。
+为实现高效推理和高性价比训练，\dsviii{} 采用 Multi-head Latent Attention~(MLA) 与 \dsmoe{} 架构，这两种架构已在 \dsvii{} 中得到充分验证。
+此外，\dsviii{} 首创用于负载均衡的 auxiliary-loss-free 策略，并设置 multi-token prediction 训练目标以获得更强性能。
+我们在 14.8 万亿个多样且高质量的 token 上预训练 \dsviii{}，随后通过 Supervised Fine-Tuning 和 Reinforcement Learning 阶段充分释放其能力。
+全面评估表明，\dsviii{} 优于其他开源模型，并取得了可比于领先闭源模型的性能。
+尽管性能优异，\dsviii{} 完整训练仅需 2.788M H800 GPU 小时。
+此外，它的训练过程极其稳定。
+在整个训练过程中，我们没有遇到任何不可恢复的 loss spike，也没有执行任何回滚。
+模型 checkpoints 可在 \url{https://github.com/deepseek-ai/DeepSeek-V3} 获取。
 
 \end{abstract}
 
@@ -147,7 +147,7 @@ The model checkpoints are available at \url{https://github.com/deepseek-ai/DeepS
 \includegraphics[width=\textwidth]{figures/dsv3_performance.pdf}
 \caption{
     \centering
-    Benchmark performance of \dsviii{} and its counterparts.
+    \dsviii{} 及其对比模型的基准性能。
 }
 \label{fig:dsv3_performance}
 \end{figure}
@@ -160,39 +160,39 @@ The model checkpoints are available at \url{https://github.com/deepseek-ai/DeepS
 
 \newpage
 
-\section{Introduction}
+\section{引言}
 
-In recent years, Large Language Models~(LLMs) have been undergoing rapid iteration and evolution~\citep{gpt4o,claude35sonnet,gemini1_5}, progressively diminishing the gap towards Artificial General Intelligence~(AGI).
-Beyond closed-source models, open-source models, including DeepSeek series~\citep{dsvi,dsvii,dscodervi,dscodervii}, LLaMA series~\citep{llama,llama2,llama3,llama3_1_405b}, Qwen series~\citep{qwen,qwen1_5,qwen2_5}, and Mistral series~\citep{mistral,mixtral8x22b}, are also making significant strides, endeavoring to close the gap with their closed-source counterparts.
-To further push the boundaries of open-source model capabilities, we scale up our models and introduce \dsviii{}, a large Mixture-of-Experts~(MoE) model with 671B parameters, of which 37B are activated for each token.
+近年来，Large Language Models~(LLMs) 正在快速迭代和演进~\citep{gpt4o,claude35sonnet,gemini1_5}，逐步缩小与 Artificial General Intelligence~(AGI) 的差距。
+除闭源模型外，开源模型，包括 DeepSeek 系列~\citep{dsvi,dsvii,dscodervi,dscodervii}、LLaMA 系列~\citep{llama,llama2,llama3,llama3_1_405b}、Qwen 系列~\citep{qwen,qwen1_5,qwen2_5} 和 Mistral 系列~\citep{mistral,mixtral8x22b}，也在取得显著进展，努力缩小与闭源模型的差距。
+为进一步推进开源模型能力边界，我们扩大模型规模并推出 \dsviii{}，这是一个拥有 671B 参数的大型 Mixture-of-Experts~(MoE) 模型，其中每个 token 激活 37B 参数。
 
-With a forward-looking perspective, we consistently strive for strong model performance and economical costs.
-Therefore, in terms of architecture, \dsviii{} still adopts Multi-head Latent Attention~(\dsattn{})~\citep{dsvii} for efficient inference and \dsmoe{}~\citep{deepseekmoe} for cost-effective training. 
-These two architectures have been validated in \dsvii{}~\citep{dsvii}, demonstrating their capability to maintain robust model performance while achieving efficient training and inference.
-Beyond the basic architecture, we implement two additional strategies to further enhance the model capabilities. 
-Firstly, \dsviii{} pioneers an auxiliary-loss-free strategy~\citep{noaux_tc} for load balancing, with the aim of minimizing the adverse impact on model performance that arises from the effort to encourage load balancing.
-Secondly, \dsviii{} employs a multi-token prediction training objective, which we have observed to enhance the overall performance on evaluation benchmarks.
+秉持前瞻视角，我们始终追求强模型性能与低成本的结合。
+因此，在架构方面，\dsviii{} 仍采用 Multi-head Latent Attention~(\dsattn{})~\citep{dsvii} 以实现高效推理，并采用 \dsmoe{}~\citep{deepseekmoe} 以实现高性价比训练。
+这两种架构已在 \dsvii{}~\citep{dsvii} 中得到验证，表明它们能够在实现高效训练和推理的同时保持强劲模型性能。
+在基础架构之外，我们实施了两项额外策略，以进一步增强模型能力。
+首先，\dsviii{} 首创用于负载均衡的 auxiliary-loss-free 策略~\citep{noaux_tc}，旨在最大限度减少鼓励负载均衡对模型性能造成的不利影响。
+其次，\dsviii{} 使用 multi-token prediction 训练目标，我们观察到它能够提升评估基准上的整体性能。
 
-In order to achieve efficient training, we support the FP8 mixed precision training and implement comprehensive optimizations for the training framework.
-Low-precision training has emerged as a promising solution for efficient training~\citep{bf16train, fp16train, fp8lm, llm.int8}, its evolution being closely tied to advancements in hardware capabilities~\citep{fp8format, hifp8format, microscaling}. 
-In this work, we introduce an FP8 mixed precision training framework and, for the first time, validate its effectiveness on an extremely large-scale model. 
-Through the support for FP8 computation and storage, we achieve both accelerated training and reduced GPU memory usage. 
-As for the training framework, we design the DualPipe algorithm for efficient pipeline parallelism, which has fewer pipeline bubbles and hides most of the communication during training through computation-communication overlap.
-This overlap ensures that, as the model further scales up, as long as we maintain a constant computation-to-communication ratio, we can still employ fine-grained experts across nodes while achieving a near-zero all-to-all communication overhead.
-In addition, we also develop efficient cross-node all-to-all communication kernels to fully utilize InfiniBand~(IB) and NVLink bandwidths. 
-Furthermore, we meticulously optimize the memory footprint, making it possible to train \dsviii{} without using costly tensor parallelism.
-Combining these efforts, we achieve high training efficiency. 
+为实现高效训练，我们支持 FP8 混合精度训练，并对训练框架进行了全面优化。
+低精度训练已成为高效训练的有前景方案~\citep{bf16train, fp16train, fp8lm, llm.int8}，其演进与硬件能力进步紧密相关~\citep{fp8format, hifp8format, microscaling}。
+在本文中，我们介绍一个 FP8 混合精度训练框架，并首次在超大规模模型上验证其有效性。
+通过支持 FP8 计算和存储，我们同时实现了训练加速与 GPU 内存使用降低。
+对于训练框架，我们设计了用于高效 pipeline parallelism 的 DualPipe 算法，它具有更少的 pipeline bubbles，并通过计算与通信重叠隐藏训练期间的大部分通信。
+这种重叠保证了当模型进一步扩展时，只要保持恒定的计算通信比，我们仍可跨节点使用细粒度专家，并实现近乎为零的 all-to-all 通信开销。
+此外，我们还开发了高效的跨节点 all-to-all 通信 kernel，以充分利用 InfiniBand~(IB) 和 NVLink 带宽。
+进一步地，我们细致优化了内存占用，使得无需使用代价高昂的 tensor parallelism 也能训练 \dsviii{}。
+结合这些努力，我们实现了很高的训练效率。
 
-During pre-training, we train \dsviii{} on 14.8T high-quality and diverse tokens. 
-The pre-training process is remarkably stable. 
-Throughout the entire training process, we did not encounter any irrecoverable loss spikes or have to roll back.
-Next, we conduct a two-stage context length extension for \dsviii{}. In the first stage, the maximum context length is extended to 32K, and in the second stage, it is further extended to 128K. 
-Following this, we conduct post-training, including Supervised Fine-Tuning~(SFT) and Reinforcement Learning~(RL) on the base model of \dsviii{}, to align it with human preferences and further unlock its potential. 
-During the post-training stage, we distill the reasoning capability from the DeepSeek-R1 series of models, and meanwhile carefully maintain the balance between model accuracy and generation length. 
+在预训练期间，我们在 14.8T 个高质量且多样的 token 上训练 \dsviii{}。
+预训练过程极其稳定。
+在整个训练过程中，我们没有遇到任何不可恢复的 loss spike，也无需回滚。
+随后，我们对 \dsviii{} 进行两阶段上下文长度扩展。第一阶段将最大上下文长度扩展到 32K，第二阶段进一步扩展到 128K。
+此后，我们在 \dsviii{} 基础模型上进行 post-training，包括 Supervised Fine-Tuning~(SFT) 和 Reinforcement Learning~(RL)，以使其对齐人类偏好并进一步释放潜力。
+在 post-training 阶段，我们从 DeepSeek-R1 系列模型中蒸馏推理能力，同时谨慎维持模型准确率与生成长度之间的平衡。
 
-We evaluate \dsviii{} on a comprehensive array of benchmarks. 
-Despite its economical training costs, comprehensive evaluations reveal that \dsviii{}-Base has emerged as the strongest open-source base model currently available, especially in code and math. 
-Its chat version also outperforms other open-source models and achieves performance comparable to leading closed-source models, including GPT-4o and Claude-3.5-Sonnet, on a series of standard and open-ended benchmarks. 
+我们在一系列全面基准上评估 \dsviii{}。
+尽管训练成本很低，全面评估表明 \dsviii{}-Base 已成为当前最强的开源基础模型，尤其在代码和数学方面表现突出。
+其聊天版本也优于其他开源模型，并在一系列标准和开放式基准上取得了可比于 GPT-4o 和 Claude-3.5-Sonnet 等领先闭源模型的性能。
 
 \begin{table}[t]
     \centering
@@ -206,108 +206,108 @@ Its chat version also outperforms other open-source models and achieves performa
         \bottomrule
     \end{tabular}
     \caption{
-    Training costs of \dsviii{}, assuming the rental price of H800 is \$2 per GPU hour.
+    \dsviii{} 的训练成本，假设 H800 租赁价格为每 GPU 小时 \$2。
     }
     \label{tab:cost}
 \end{table}
 
-Lastly, we emphasize again the economical training costs of \dsviii{}, summarized in Table~\ref{tab:cost}, achieved through our optimized co-design of algorithms, frameworks, and hardware. 
-During the pre-training stage, training \dsviii{} on each trillion tokens requires only 180K H800 GPU hours, i.e., 3.7 days on our cluster with 2048 H800 GPUs. 
-Consequently, our pre-training stage is completed in less than two months and costs 2664K GPU hours.
-Combined with 119K GPU hours for the context length extension and 5K GPU hours for post-training, \dsviii{} costs only 2.788M GPU hours for its full training. 
-Assuming the rental price of the H800 GPU is \$2 per GPU hour, our total training costs amount to only \$5.576M.
-Note that the aforementioned costs include only the official training of \dsviii{}, excluding the costs associated with prior research and ablation experiments on architectures, algorithms, or data. 
+最后，我们再次强调 \dsviii{} 的低训练成本，表~\ref{tab:cost} 对此进行了总结。这一成本得益于我们对算法、框架和硬件的优化协同设计。
+在预训练阶段，每训练 \dsviii{} 一万亿 token 仅需 180K H800 GPU 小时，即在我们配备 2048 块 H800 GPU 的集群上耗时 3.7 天。
+因此，我们的预训练阶段在不到两个月内完成，成本为 2664K GPU 小时。
+加上上下文长度扩展的 119K GPU 小时和 post-training 的 5K GPU 小时，\dsviii{} 完整训练仅耗费 2.788M GPU 小时。
+假设 H800 GPU 租赁价格为每 GPU 小时 \$2，我们的总训练成本仅为 \$5.576M。
+需要说明的是，上述成本仅包括 \dsviii{} 的正式训练，不包括此前在架构、算法或数据上的研究和消融实验成本。
 
-Our main contribution includes:
+我们的主要贡献包括：
 
 \noindent
-\textbf{Architecture: Innovative Load Balancing Strategy and Training Objective}
+\textbf{架构：创新的负载均衡策略与训练目标}
 \begin{itemize}[topsep=0pt]
     \item 
-    On top of the efficient architecture of \dsvii{}, we pioneer an auxiliary-loss-free strategy for load balancing, which minimizes the performance degradation that arises from encouraging load balancing.
+    在 \dsvii{} 的高效架构基础上，我们首创用于负载均衡的 auxiliary-loss-free 策略，最大限度减少鼓励负载均衡带来的性能下降。
     \item 
-    We investigate a Multi-Token Prediction (MTP) objective and prove it beneficial to model performance. 
-    It can also be used for speculative decoding for inference acceleration. 
+    我们研究 Multi-Token Prediction (MTP) 目标，并证明它有利于模型性能。
+    它还可用于 speculative decoding，以加速推理。
 \end{itemize}
 
 \noindent
-\textbf{Pre-Training: Towards Ultimate Training Efficiency}
+\textbf{预训练：迈向极致训练效率}
 \begin{itemize}[topsep=0pt]
     \item
-    We design an FP8 mixed precision training framework and, for the first time, validate the feasibility and effectiveness of FP8 training on an extremely large-scale model. 
+    我们设计了 FP8 混合精度训练框架，并首次在超大规模模型上验证了 FP8 训练的可行性和有效性。
     \item 
-    Through the co-design of algorithms, frameworks, and hardware, we overcome the communication bottleneck in cross-node MoE training, achieving near-full computation-communication overlap. 
-    This significantly enhances our training efficiency and reduces the training costs, enabling us to further scale up the model size without additional overhead.
+    通过算法、框架和硬件的协同设计，我们克服了跨节点 MoE 训练中的通信瓶颈，实现了近乎完全的计算通信重叠。
+    这显著提升了训练效率并降低了训练成本，使我们能够在不增加额外开销的情况下进一步扩大模型规模。
     \item 
-    At an economical cost of only 2.664M H800 GPU hours, we complete the pre-training of \dsviii{} on 14.8T tokens, producing the currently strongest open-source base model. 
-    The subsequent training stages after pre-training require only 0.1M GPU hours.
+    我们仅以 2.664M H800 GPU 小时的低成本，在 14.8T 个 token 上完成 \dsviii{} 的预训练，得到当前最强的开源基础模型。
+    预训练之后的后续训练阶段仅需 0.1M GPU 小时。
 \end{itemize}
 
 \noindent
-\textbf{Post-Training: Knowledge Distillation from DeepSeek-R1}
+\textbf{后训练：来自 DeepSeek-R1 的知识蒸馏}
 \begin{itemize}[topsep=0pt]
     \item 
-    We introduce an innovative methodology to distill reasoning capabilities from the long-Chain-of-Thought (CoT) model, specifically from one of the DeepSeek R1 series models, into standard LLMs, particularly \dsviii{}.
-    Our pipeline elegantly incorporates the verification and reflection patterns of R1 into \dsviii{} and notably improves its reasoning performance.
-    Meanwhile, we also maintain control over the output style and length of \dsviii{}. 
+    我们提出一种创新方法，将 long-Chain-of-Thought (CoT) 模型，具体而言是 DeepSeek R1 系列中的一个模型，的推理能力蒸馏到标准 LLM 中，尤其是 \dsviii{}。
+    我们的流程自然地将 R1 的验证与反思模式融入 \dsviii{}，并显著提升其推理性能。
+    同时，我们也保持了对 \dsviii{} 输出风格和长度的控制。
 \end{itemize}
 \noindent
-\textbf{Summary of Core Evaluation Results}
+\textbf{核心评估结果总结}
 \begin{itemize}[topsep=0pt]
-    \item \textbf{Knowledge}:
+    \item \textbf{知识}：
     (1) 
-    On educational benchmarks such as MMLU, MMLU-Pro, and GPQA, \dsviii{} outperforms all other open-source models, achieving 88.5 on MMLU, 75.9 on MMLU-Pro, and 59.1 on GPQA.
-    Its performance is comparable to leading closed-source models like GPT-4o and Claude-Sonnet-3.5, narrowing the gap between open-source and closed-source models in this domain.
+    在 MMLU、MMLU-Pro 和 GPQA 等教育类基准上，\dsviii{} 优于所有其他开源模型，在 MMLU 上达到 88.5，在 MMLU-Pro 上达到 75.9，在 GPQA 上达到 59.1。
+    其性能可比于 GPT-4o 和 Claude-Sonnet-3.5 等领先闭源模型，缩小了该领域开源与闭源模型之间的差距。
     (2)
-    For factuality benchmarks, \dsviii{} demonstrates superior performance among open-source models on both SimpleQA and Chinese SimpleQA. 
-    While it trails behind GPT-4o and Claude-Sonnet-3.5 in English factual knowledge (SimpleQA), it surpasses these models in Chinese factual knowledge (Chinese SimpleQA), highlighting its strength in Chinese factual knowledge.
+    在事实性基准上，\dsviii{} 在 SimpleQA 和 Chinese SimpleQA 上均展现出开源模型中的优越性能。
+    尽管它在英文事实知识，SimpleQA，上落后于 GPT-4o 和 Claude-Sonnet-3.5，但在中文事实知识，Chinese SimpleQA，上超过这些模型，凸显了其在中文事实知识方面的优势。
     
-    \item \textbf{Code, Math, and Reasoning}: 
+    \item \textbf{代码、数学与推理}：
     (1)
-    \dsviii{} achieves state-of-the-art performance on math-related benchmarks among all non-long-CoT open-source and closed-source models. 
-    Notably, it even outperforms o1-preview on specific benchmarks, such as MATH-500, demonstrating its robust mathematical reasoning capabilities. 
+    在所有非 long-CoT 开源和闭源模型中，\dsviii{} 在数学相关基准上取得 state-of-the-art 性能。
+    值得注意的是，它甚至在 MATH-500 等特定基准上超过 o1-preview，展现出强大的数学推理能力。
     (2)
-    On coding-related tasks, \dsviii{} emerges as the top-performing model for coding competition benchmarks, such as LiveCodeBench, solidifying its position as the leading model in this domain. 
-    For engineering-related tasks, while \dsviii{} performs slightly below Claude-Sonnet-3.5, it still outpaces all other models by a significant margin, demonstrating its competitiveness across diverse technical benchmarks.
+    在代码相关任务上，\dsviii{} 成为 LiveCodeBench 等编程竞赛基准中表现最好的模型，巩固了其在该领域的领先地位。
+    对于工程相关任务，尽管 \dsviii{} 的表现略低于 Claude-Sonnet-3.5，但仍大幅领先所有其他模型，展现出在多样技术基准上的竞争力。
 \end{itemize}
 
 
 % [roadmap]
-In the remainder of this paper, we first present a detailed exposition of our \dsviii{} model architecture (Section~\ref{sec:arch}). 
-Subsequently, we introduce our infrastructures, encompassing our compute clusters, the training framework, the support for FP8 training, the inference deployment strategy, and our suggestions on future hardware design.
-Next, we describe our pre-training process, including the construction of training data, hyper-parameter settings, long-context extension techniques, the associated evaluations, as well as some discussions (Section~\ref{sec:pre-training}). 
-Thereafter, we discuss our efforts on post-training, which include Supervised Fine-Tuning (SFT), Reinforcement Learning (RL), the corresponding evaluations, and discussions (Section~\ref{sec:alignment}). 
-Lastly, we conclude this work, discuss existing limitations of \dsviii{}, and propose potential directions for future research (Section~\ref{sec:conclusion}).
+本文余下部分安排如下。我们首先详细介绍 \dsviii{} 的模型架构 (Section~\ref{sec:arch})。
+随后，我们介绍基础设施，包括计算集群、训练框架、FP8 训练支持、推理部署策略，以及我们对未来硬件设计的建议。
+接着，我们描述预训练过程，包括训练数据构建、超参数设置、长上下文扩展技术、相关评估以及若干讨论 (Section~\ref{sec:pre-training})。
+之后，我们讨论 post-training 方面的工作，包括 Supervised Fine-Tuning (SFT)、Reinforcement Learning (RL)、相应评估和讨论 (Section~\ref{sec:alignment})。
+最后，我们总结本文工作，讨论 \dsviii{} 的现有局限，并提出未来研究的潜在方向 (Section~\ref{sec:conclusion})。
 
-\section{Architecture}
+\section{架构}
 \label{sec:arch}
 
-We first introduce the basic architecture of \dsviii{}, featured by Multi-head Latent Attention~(\dsattn{})~\citep{dsvii} for efficient inference and \dsmoe{}~\citep{deepseekmoe} for economical training.
-Then, we present a Multi-Token Prediction (MTP) training objective, which we have observed to enhance the overall performance on evaluation benchmarks.
-For other minor details not explicitly mentioned, \dsviii{} adheres to the settings of \dsvii{}~\citep{dsvii}. 
+我们首先介绍 \dsviii{} 的基础架构，其特点是使用 Multi-head Latent Attention~(\dsattn{})~\citep{dsvii} 实现高效推理，并使用 \dsmoe{}~\citep{deepseekmoe} 实现低成本训练。
+随后，我们介绍 Multi-Token Prediction (MTP) 训练目标，我们观察到它能够提升评估基准上的整体性能。
+对于未明确提及的其他细节，\dsviii{} 沿用 \dsvii{}~\citep{dsvii} 的设置。
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=0.99\linewidth]{figures/basic_arch.pdf}
 \caption{
-    Illustration of the basic architecture of \dsviii{}. 
-    Following \dsvii{}, we adopt \dsattn{} and \dsmoe{} for efficient inference and economical training.
+    \dsviii{} 基础架构示意图。
+    沿袭 \dsvii{}，我们采用 \dsattn{} 和 \dsmoe{} 以实现高效推理和低成本训练。
 }
 \label{fig:basic_arch}
 \end{figure}
 
-\subsection{Basic Architecture}
+\subsection{基础架构}
 
-The basic architecture of \dsviii{} is still within the Transformer~\citep{transformer} framework. 
-For efficient inference and economical training, \dsviii{} also adopts \dsattn{} and \dsmoe{}, which have been thoroughly validated by \dsvii{}. 
-Compared with \dsvii{}, an exception is that we additionally introduce an auxiliary-loss-free load balancing strategy~\citep{noaux_tc} for \dsmoe{} to mitigate the performance degradation induced by the effort to ensure load balance. 
-Figure~\ref{fig:basic_arch} illustrates the basic architecture of \dsviii{}, and we will briefly review the details of MLA and DeepSeekMoE in this section. 
+\dsviii{} 的基础架构仍属于 Transformer~\citep{transformer} 框架。
+为实现高效推理和低成本训练，\dsviii{} 同样采用已由 \dsvii{} 充分验证的 \dsattn{} 和 \dsmoe{}。
+与 \dsvii{} 相比，一个例外是我们为 \dsmoe{} 额外引入 auxiliary-loss-free 负载均衡策略~\citep{noaux_tc}，以缓解确保负载均衡所导致的性能下降。
+图~\ref{fig:basic_arch} 展示了 \dsviii{} 的基础架构，本节将简要回顾 MLA 和 DeepSeekMoE 的细节。
 
 \subsubsection{Multi-Head Latent Attention}
 
-For attention, \dsviii{} adopts the \dsattn{} architecture. 
-Let $d$ denote the embedding dimension, $n_h$ denote the number of attention heads, $d_h$ denote the dimension per head, and $\mathbf{h}_{t} \in \mathbb{R}^{d}$ denote the attention input for the $t$-th token at a given attention layer.
-The core of \dsattn{} is the low-rank joint compression for attention keys and values to reduce Key-Value (KV) cache during inference:
+对于注意力，\dsviii{} 采用 \dsattn{} 架构。
+令 $d$ 表示 embedding 维度，$n_h$ 表示注意力头数量，$d_h$ 表示每个头的维度，$\mathbf{h}_{t} \in \mathbb{R}^{d}$ 表示给定注意力层中第 $t$ 个 token 的注意力输入。
+\dsattn{} 的核心是对注意力 key 和 value 进行低秩联合压缩，以减少推理期间的 Key-Value (KV) cache：
 \begin{align}
     \boxed{\color{blue} \mathbf{c}_{t}^{KV}} &= W^{DKV} \mathbf{h}_{t}, \\
     [\mathbf{k}_{t, 1}^{C};\mathbf{k}_{t, 2}^{C};...;\mathbf{k}_{t, n_{h}}^{C}] = \mathbf{k}_{t}^{C} &= W^{UK} \mathbf{c}_{t}^{KV}, \\
@@ -315,40 +315,40 @@ The core of \dsattn{} is the low-rank joint compression for attention keys and v
     \mathbf{k}_{t, i} &= [\mathbf{k}_{t, i}^{C}; \mathbf{k}_{t}^{R}], \\
     [\mathbf{v}_{t, 1}^{C};\mathbf{v}_{t, 2}^{C};...;\mathbf{v}_{t, n_{h}}^{C}] = \mathbf{v}_{t}^{C} &= W^{UV} \mathbf{c}_{t}^{KV}, 
 \end{align}
-where $\mathbf{c}_{t}^{KV} \in \mathbb{R}^{d_c}$ is the compressed latent vector for keys and values; 
-$d_c (\ll d_h n_h)$ indicates the KV compression dimension;
-$W^{DKV} \in \mathbb{R}^{d_c \times d}$ denotes the down-projection matrix;
-$W^{UK},W^{UV} \in \mathbb{R}^{d_h n_h \times d_c}$ are the up-projection matrices for keys and values, respectively;
-$W^{KR} \in \mathbb{R}^{d_h^R \times d}$ is the matrix used to produce the decoupled key that carries Rotary Positional Embedding (RoPE)~\citep{su2024roformer}; 
-$\operatorname{RoPE}(\cdot)$ denotes the operation that applies RoPE matrices; 
-and $[\cdot;\cdot]$ denotes concatenation.
-Note that for MLA, only the blue-boxed vectors (i.e., $\color{blue} \mathbf{c}_{t}^{KV}$ and $\color{blue}\mathbf{k}_{t}^{R}$) need to be cached during generation, which results in significantly reduced KV cache while maintaining performance comparable to standard Multi-Head Attention (MHA)~\citep{transformer}.
+其中 $\mathbf{c}_{t}^{KV} \in \mathbb{R}^{d_c}$ 是 key 和 value 的压缩隐向量；
+$d_c (\ll d_h n_h)$ 表示 KV 压缩维度；
+$W^{DKV} \in \mathbb{R}^{d_c \times d}$ 表示下投影矩阵；
+$W^{UK},W^{UV} \in \mathbb{R}^{d_h n_h \times d_c}$ 分别是 key 和 value 的上投影矩阵；
+$W^{KR} \in \mathbb{R}^{d_h^R \times d}$ 是用于生成携带 Rotary Positional Embedding (RoPE)~\citep{su2024roformer} 的解耦 key 的矩阵；
+$\operatorname{RoPE}(\cdot)$ 表示应用 RoPE 矩阵的操作；
+$[\cdot;\cdot]$ 表示拼接。
+注意，对于 MLA，生成期间只需缓存蓝框向量，即 $\color{blue} \mathbf{c}_{t}^{KV}$ 和 $\color{blue}\mathbf{k}_{t}^{R}$，因此在保持可比于标准 Multi-Head Attention (MHA)~\citep{transformer} 性能的同时，显著减少 KV cache。
 
-For the attention queries, we also perform a low-rank compression, which can reduce the activation memory during training:
+对于注意力 query，我们也执行低秩压缩，这可以减少训练期间的激活内存：
 \begin{align}
     \mathbf{c}_{t}^{Q} &= W^{DQ} \mathbf{h}_{t}, \\
     [\mathbf{q}_{t, 1}^{C};\mathbf{q}_{t, 2}^{C};...;\mathbf{q}_{t, n_{h}}^{C}] = \mathbf{q}_{t}^{C} &= W^{UQ} \mathbf{c}_{t}^{Q}, \\
     [\mathbf{q}_{t, 1}^{R};\mathbf{q}_{t, 2}^{R};...;\mathbf{q}_{t, n_{h}}^{R}] = \mathbf{q}_{t}^{R} &= \operatorname{RoPE}({W^{QR}} \mathbf{c}_{t}^{Q}), \\
     \mathbf{q}_{t, i} &= [\mathbf{q}_{t, i}^{C}; \mathbf{q}_{t, i}^{R}],
 \end{align}
-where $\mathbf{c}_{t}^{Q} \in \mathbb{R}^{d_c^{\prime}}$ is the compressed latent vector for queries; 
-$d_c^{\prime} (\ll d_h n_h)$ denotes the query compression dimension; 
-$W^{DQ} \in \mathbb{R}^{d_c^{\prime} \times d}, W^{UQ} \in \mathbb{R}^{d_h n_h \times d_c^{\prime}}$ are the down-projection and up-projection matrices for queries, respectively;
-and $W^{QR} \in \mathbb{R}^{d_h^R n_h \times d_c^{\prime}}$ is the matrix to produce the decoupled queries that carry RoPE. 
+其中 $\mathbf{c}_{t}^{Q} \in \mathbb{R}^{d_c^{\prime}}$ 是 query 的压缩隐向量；
+$d_c^{\prime} (\ll d_h n_h)$ 表示 query 压缩维度；
+$W^{DQ} \in \mathbb{R}^{d_c^{\prime} \times d}, W^{UQ} \in \mathbb{R}^{d_h n_h \times d_c^{\prime}}$ 分别是 query 的下投影和上投影矩阵；
+$W^{QR} \in \mathbb{R}^{d_h^R n_h \times d_c^{\prime}}$ 是用于生成携带 RoPE 的解耦 query 的矩阵。
 
-Ultimately, the attention queries ($\mathbf{q}_{t, i}$), keys ($\mathbf{k}_{j, i}$), and values ($\mathbf{v}_{j, i}^{C}$) are combined to yield the final attention output $\mathbf{u}_{t}$:
+最终，注意力 query ($\mathbf{q}_{t, i}$)、key ($\mathbf{k}_{j, i}$) 和 value ($\mathbf{v}_{j, i}^{C}$) 被组合起来，得到最终注意力输出 $\mathbf{u}_{t}$：
 \begin{align}
     \mathbf{o}_{t, i} &= \sum_{j=1}^{t} \operatorname{Softmax}_j(\frac{\mathbf{q}_{t, i}^T \mathbf{k}_{j, i}}{\sqrt{d_{h} + d_{h}^{R}}}) \mathbf{v}_{j, i}^{C}, \\
     \mathbf{u}_{t} &= W^{O} [\mathbf{o}_{t, 1};\mathbf{o}_{t, 2};...;\mathbf{o}_{t, n_{h}}],
 \end{align}
-where $W^{O} \in \mathbb{R}^{d \times d_h n_h}$ denotes the output projection matrix. 
+其中 $W^{O} \in \mathbb{R}^{d \times d_h n_h}$ 表示输出投影矩阵。
 
-\subsubsection{\dsmoe{} with Auxiliary-Loss-Free Load Balancing}
+\subsubsection{采用 Auxiliary-Loss-Free 负载均衡的 \dsmoe{}}
 
-\paragraph{Basic Architecture of \dsmoe{}.}
-For Feed-Forward Networks~(FFNs), \dsviii{} employs the \dsmoe{} architecture~\citep{deepseekmoe}. 
-Compared with traditional MoE architectures like GShard~\citep{gshard}, \dsmoe{} uses finer-grained experts and isolates some experts as shared ones.
-Let $\mathbf{u}_{t}$ denote the FFN input of the $t$-th token, we compute the FFN output $\mathbf{h}_{t}^{\prime}$ as follows:
+\paragraph{\dsmoe{} 的基础架构。}
+对于 Feed-Forward Networks~(FFNs)，\dsviii{} 使用 \dsmoe{} 架构~\citep{deepseekmoe}。
+与 GShard~\citep{gshard} 等传统 MoE 架构相比，\dsmoe{} 使用更细粒度的专家，并将部分专家隔离为共享专家。
+令 $\mathbf{u}_{t}$ 表示第 $t$ 个 token 的 FFN 输入，我们按如下方式计算 FFN 输出 $\mathbf{h}_{t}^{\prime}$：
 \begin{align}
     \mathbf{h}_{t}^{\prime} & = \mathbf{u}_{t} + \sum_{i=1}^{N_{s}} {\operatorname{FFN}^{(s)}_{i}\left( \mathbf{u}_{t} \right)} + \sum_{i=1}^{N_r} {g_{i,t} \operatorname{FFN}^{(r)}_{i}\left( \mathbf{u}_{t} \right)}, \\
     g_{i,t} & = \frac{g^{\prime}_{i,t}}{\sum_{j=1}^{N_r} g^{\prime}_{j,t}}, \\
@@ -358,35 +358,35 @@ Let $\mathbf{u}_{t}$ denote the FFN input of the $t$-th token, we compute the FF
     \end{cases} \\
     s_{i,t} & = \operatorname{Sigmoid} \left( {\mathbf{u}_{t}}^{T} \mathbf{e}_{i} \right),
 \end{align}
-where $N_{s}$ and $N_r$ denote the numbers of shared experts and routed experts, respectively; 
-$\operatorname{FFN}^{(s)}_{i}(\cdot)$ and $\operatorname{FFN}^{(r)}_{i}(\cdot)$ denote the $i$-th shared expert and the $i$-th routed expert, respectively; 
-$K_{r}$ denotes the number of activated routed experts; 
-$g_{i,t}$ is the gating value for the $i$-th expert; 
-$s_{i,t}$ is the token-to-expert affinity; 
-$\mathbf{e}_{i}$ is the centroid vector of the $i$-th routed expert; 
-and $\operatorname{Topk}(\cdot, K)$ denotes the set comprising $K$ highest scores among the affinity scores calculated for the $t$-th token and all routed experts.
-Slightly different from \dsvii{}, \dsviii{} uses the sigmoid function to compute the affinity scores, and applies a normalization among all selected affinity scores to produce the gating values. 
+其中 $N_{s}$ 和 $N_r$ 分别表示共享专家和路由专家的数量；
+$\operatorname{FFN}^{(s)}_{i}(\cdot)$ 和 $\operatorname{FFN}^{(r)}_{i}(\cdot)$ 分别表示第 $i$ 个共享专家和第 $i$ 个路由专家；
+$K_{r}$ 表示被激活的路由专家数量；
+$g_{i,t}$ 是第 $i$ 个专家的 gating 值；
+$s_{i,t}$ 是 token-to-expert 亲和度；
+$\mathbf{e}_{i}$ 是第 $i$ 个路由专家的中心向量；
+$\operatorname{Topk}(\cdot, K)$ 表示由第 $t$ 个 token 与所有路由专家计算得到的亲和度分数中最高的 $K$ 个分数组成的集合。
+与 \dsvii{} 略有不同，\dsviii{} 使用 sigmoid 函数计算亲和度分数，并对所有被选中的亲和度分数进行归一化以生成 gating 值。
 
-\paragraph{Auxiliary-Loss-Free Load Balancing.}
-For MoE models, an unbalanced expert load will lead to routing collapse~\citep{moe} and diminish computational efficiency in scenarios with expert parallelism. 
-Conventional solutions usually rely on the auxiliary loss~\citep{switch,gshard} to avoid unbalanced load. 
-However, too large an auxiliary loss will impair the model performance~\citep{noaux_tc}. 
-To achieve a better trade-off between load balance and model performance, we pioneer an auxiliary-loss-free load balancing strategy~\citep{noaux_tc} to ensure load balance. 
-To be specific, we introduce a bias term $b_i$ for each expert and add it to the corresponding affinity scores $s_{i,t}$ to determine the top-K routing:
+\paragraph{Auxiliary-Loss-Free 负载均衡。}
+对于 MoE 模型，不均衡的专家负载会导致 routing collapse~\citep{moe}，并在 expert parallelism 场景下降低计算效率。
+传统解决方案通常依赖辅助损失~\citep{switch,gshard} 来避免负载不均衡。
+然而，过大的辅助损失会损害模型性能~\citep{noaux_tc}。
+为在负载均衡与模型性能之间取得更好折中，我们首创 auxiliary-loss-free 负载均衡策略~\citep{noaux_tc} 来确保负载均衡。
+具体而言，我们为每个专家引入偏置项 $b_i$，并将其加到对应亲和度分数 $s_{i,t}$ 上，以确定 top-K 路由：
 \begin{align}
     g^{\prime}_{i,t} & = \begin{cases} 
     s_{i,t}, & s_{i,t} + b_i \in \operatorname{Topk} (\{ s_{j, t} + b_j | 1 \leq j \leq N_r \}, K_{r}), \\
     0, & \text{otherwise}.
     \end{cases}
 \end{align}
-Note that the bias term is only used for routing.
-The gating value, which will be multiplied with the FFN output, is still derived from the original affinity score $s_{i,t}$.
-During training, we keep monitoring the expert load on the whole batch of each training step.
-At the end of each step, we will decrease the bias term by $\gamma$ if its corresponding expert is overloaded, and increase it by $\gamma$ if its corresponding expert is underloaded, where $\gamma$ is a hyper-parameter called bias update speed.
-Through the dynamic adjustment, \dsviii{} keeps balanced expert load during training, and achieves better performance than models that encourage load balance through pure auxiliary losses.
+注意，偏置项仅用于路由。
+将与 FFN 输出相乘的 gating 值仍由原始亲和度分数 $s_{i,t}$ 得到。
+训练期间，我们持续监控每个训练 step 的整个 batch 上的专家负载。
+在每个 step 结束时，如果对应专家过载，我们将其偏置项减少 $\gamma$；如果对应专家负载不足，则将其增加 $\gamma$，其中 $\gamma$ 是称为偏置更新速度的超参数。
+通过这种动态调整，\dsviii{} 在训练期间保持专家负载均衡，并取得了优于仅通过辅助损失鼓励负载均衡的模型的性能。
 
-\paragraph{Complementary Sequence-Wise Auxiliary Loss.}
-Although \dsviii{} mainly relies on the auxiliary-loss-free strategy for load balance, to prevent extreme imbalance within any single sequence, we also employ a complementary sequence-wise balance loss:
+\paragraph{互补的 Sequence-Wise 辅助损失。}
+尽管 \dsviii{} 主要依赖 auxiliary-loss-free 策略实现负载均衡，为防止任意单个序列内出现极端不均衡，我们还采用了互补的 sequence-wise 平衡损失：
 \begin{align}
     \mathcal{L}_{\mathrm{Bal}} & = \alpha \sum_{i=1}^{N_r}{f_i P_i}, \\
     % f_i = \frac{N_r}{K_r T} \sum_{t=1}^{T} \mathds{1}( \text{Expert $i$ } & \text{belongs to the Top-$K_r$ set for Token $t$} ), \\
@@ -394,142 +394,142 @@ Although \dsviii{} mainly relies on the auxiliary-loss-free strategy for load ba
     s^{\prime}_{i,t} & = \frac{s_{i,t}}{\sum_{j=1}^{N_r} s_{j,t}}, \\
     P_i & = \frac{1}{T} \sum_{t=1}^{T}{s^{\prime}_{i,t}},
 \end{align}
-where the balance factor $\alpha$ is a hyper-parameter, which will be assigned an extremely small value for \dsviii{}; 
-$\mathds{1}(\cdot)$ denotes the indicator function; 
-and $T$ denotes the number of tokens in a sequence. 
-The sequence-wise balance loss encourages the expert load on each sequence to be balanced. 
+其中平衡因子 $\alpha$ 是一个超参数，在 \dsviii{} 中被赋予极小值；
+$\mathds{1}(\cdot)$ 表示指示函数；
+$T$ 表示一个序列中的 token 数量。
+Sequence-wise 平衡损失鼓励每个序列上的专家负载保持均衡。
 
-\paragraph{Node-Limited Routing.}
-Like the device-limited routing used by \dsvii{}, \dsviii{} also uses a restricted routing mechanism to limit communication costs during training. 
-In short, we ensure that each token will be sent to at most $M$ nodes, which are selected according to the sum of the highest $\frac{K_r}{M}$ affinity scores of the experts distributed on each node.
-Under this constraint, our MoE training framework can nearly achieve full computation-communication overlap. 
+\paragraph{Node-Limited Routing。}
+与 \dsvii{} 使用的 device-limited routing 类似，\dsviii{} 也使用受限路由机制来限制训练期间的通信成本。
+简言之，我们确保每个 token 最多发送到 $M$ 个节点，这些节点根据分布在每个节点上的专家中最高 $\frac{K_r}{M}$ 个亲和度分数之和来选择。
+在该约束下，我们的 MoE 训练框架几乎可以实现完全的计算通信重叠。
 
-\paragraph{No Token-Dropping.}
-Due to the effective load balancing strategy, \dsviii{} keeps a good load balance during its full training. 
-Therefore, \dsviii{} does not drop any tokens during training. 
-In addition, we also implement specific deployment strategies to ensure inference load balance, so \dsviii{} also does not drop tokens during inference. 
+\paragraph{No Token-Dropping。}
+得益于有效的负载均衡策略，\dsviii{} 在完整训练期间保持了良好的负载均衡。
+因此，\dsviii{} 在训练期间不会丢弃任何 token。
+此外，我们还实施了特定部署策略以确保推理负载均衡，因此 \dsviii{} 在推理期间也不会丢弃 token。
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=0.99\linewidth]{figures/nextn.pdf}
 \caption{
-    Illustration of our Multi-Token Prediction (MTP) implementation. 
-    We keep the complete causal chain for the prediction of each token at each depth. 
+    我们的 Multi-Token Prediction (MTP) 实现示意图。
+    我们在每个深度对每个 token 的预测中保留完整因果链。
 }
 \label{fig:nextn}
 \end{figure}
 
 \subsection{Multi-Token Prediction}
 
-Inspired by \citet{meta_mtp}, we investigate and set a Multi-Token Prediction (MTP) objective for \dsviii{}, which extends the prediction scope to multiple future tokens at each position.
-On the one hand, an MTP objective densifies the training signals and may improve data efficiency.
-On the other hand, MTP may enable the model to pre-plan its representations for better prediction of future tokens.
-Figure~\ref{fig:nextn} illustrates our implementation of MTP.
-Different from \citet{meta_mtp}, which parallelly predicts $D$ additional tokens using independent output heads, we sequentially predict additional tokens and keep the complete causal chain at each prediction depth.
-We introduce the details of our MTP implementation in this section.
+受 \citet{meta_mtp} 启发，我们为 \dsviii{} 研究并设置 Multi-Token Prediction (MTP) 目标，将每个位置的预测范围扩展到多个未来 token。
+一方面，MTP 目标使训练信号更密集，并可能提升数据效率。
+另一方面，MTP 可能使模型提前规划其表征，以更好预测未来 token。
+图~\ref{fig:nextn} 展示了我们的 MTP 实现。
+不同于 \citet{meta_mtp} 使用独立输出头并行预测 $D$ 个额外 token，我们顺序预测额外 token，并在每个预测深度保留完整因果链。
+本节介绍我们 MTP 实现的细节。
 
-\paragraph{MTP Modules.}
-To be specific, our MTP implementation uses $D$ sequential modules to predict $D$ additional tokens. 
-The $k$-th MTP module consists of a shared embedding layer $\operatorname{Emb}(\cdot)$, a shared output head $\operatorname{OutHead}(\cdot)$, a Transformer block $\operatorname{TRM}_k(\cdot)$, and a projection matrix $M_k \in \mathbb{R}^{d \times 2d}$. 
-For the $i$-th input token $t_i$, at the $k$-th prediction depth, we first combine the representation of the $i$-th token at the $(k-1)$-th depth $\mathbf{h}_i^{k-1} \in \mathbb{R}^{d}$ and the embedding of the $(i+k)$-th token $Emb(t_{i+k}) \in \mathbb{R}^{d}$ with the linear projection: 
+\paragraph{MTP 模块。}
+具体而言，我们的 MTP 实现使用 $D$ 个顺序模块来预测 $D$ 个额外 token。
+第 $k$ 个 MTP 模块由共享 embedding 层 $\operatorname{Emb}(\cdot)$、共享输出头 $\operatorname{OutHead}(\cdot)$、Transformer block $\operatorname{TRM}_k(\cdot)$ 和投影矩阵 $M_k \in \mathbb{R}^{d \times 2d}$ 组成。
+对于第 $i$ 个输入 token $t_i$，在第 $k$ 个预测深度，我们首先通过线性投影组合第 $i$ 个 token 在第 $(k-1)$ 个深度的表征 $\mathbf{h}_i^{k-1} \in \mathbb{R}^{d}$ 与第 $(i+k)$ 个 token 的 embedding $Emb(t_{i+k}) \in \mathbb{R}^{d}$：
 \begin{equation}
     \mathbf{h}_i^{\prime k} = M_k [\operatorname{RMSNorm}(\mathbf{h}_i^{k-1}) ; \operatorname{RMSNorm}(\operatorname{Emb}(t_{i+k}))],
 \end{equation}
-where $[\cdot ; \cdot]$ denotes concatenation. 
-Especially, when $k=1$, $\mathbf{h}_i^{k-1}$ refers to the representation given by the main model.
-Note that for each MTP module, its embedding layer is shared with the main model. 
-The combined $\mathbf{h}_i^{\prime k}$ serves as the input of the Transformer block at the $k$-th depth to produce the output representation at the current depth $\mathbf{h}_{i}^{k}$:
+其中 $[\cdot ; \cdot]$ 表示拼接。
+特别地，当 $k=1$ 时，$\mathbf{h}_i^{k-1}$ 指主模型给出的表征。
+注意，每个 MTP 模块的 embedding 层都与主模型共享。
+组合后的 $\mathbf{h}_i^{\prime k}$ 作为第 $k$ 个深度处 Transformer block 的输入，用于生成当前深度的输出表征 $\mathbf{h}_{i}^{k}$：
 \begin{equation}
     \mathbf{h}_{1:T-k}^{k} = \operatorname{TRM}_k(\mathbf{h}_{1:T-k}^{\prime k}),
 \end{equation}
-where $T$ represents the input sequence length and $_{i:j}$ denotes the slicing operation (inclusive of both the left and right boundaries). 
-Finally, taking $\mathbf{h}_{i}^{k}$ as the input, the shared output head will compute the probability distribution for the $k$-th additional prediction token $P_{i+1+k}^{k} \in \mathbb{R}^{V}$, where $V$ is the vocabulary size:
+其中 $T$ 表示输入序列长度，$_{i:j}$ 表示切片操作，左右边界均包含。
+最后，以 $\mathbf{h}_{i}^{k}$ 作为输入，共享输出头会计算第 $k$ 个额外预测 token 的概率分布 $P_{i+1+k}^{k} \in \mathbb{R}^{V}$，其中 $V$ 是词表大小：
 \begin{equation}
     P_{i+k+1}^{k} = \operatorname{OutHead}(\mathbf{h}_{i}^{k}).
 \end{equation}
-The output head $\operatorname{OutHead}(\cdot)$ linearly maps the representation to logits and subsequently applies the $\operatorname{Softmax}(\cdot)$ function to compute the prediction probabilities of the $k$-th additional token. 
-Also, for each MTP module, its output head is shared with the main model. 
-Our principle of maintaining the causal chain of predictions is similar to that of EAGLE~\citep{eagle}, but its primary objective is speculative decoding~\citep{speculative_xhm,speculative_google}, whereas we utilize MTP to improve training.
+输出头 $\operatorname{OutHead}(\cdot)$ 将表征线性映射为 logits，随后应用 $\operatorname{Softmax}(\cdot)$ 函数计算第 $k$ 个额外 token 的预测概率。
+同样，每个 MTP 模块的输出头都与主模型共享。
+我们维持预测因果链的原则与 EAGLE~\citep{eagle} 类似，但 EAGLE 的主要目标是 speculative decoding~\citep{speculative_xhm,speculative_google}，而我们使用 MTP 来改进训练。
 
-\paragraph{MTP Training Objective.}
-For each prediction depth, we compute a cross-entropy loss $\mathcal{L}_{\text{MTP}}^{k}$:
+\paragraph{MTP 训练目标。}
+对于每个预测深度，我们计算交叉熵损失 $\mathcal{L}_{\text{MTP}}^{k}$：
 \begin{equation}
     \mathcal{L}_{\text{MTP}}^{k} = \operatorname{CrossEntropy}(P_{2 + k:T + 1}^{k}, t_{2 + k:T + 1}) = -\frac{1}{T} \sum_{i=2 + k}^{T + 1} \log P_i^k [t_i],
 \end{equation}
-where $T$ denotes the input sequence length, $t_i$ denotes the ground-truth token at the $i$-th position, and $P_i^k [t_i]$ denotes the corresponding prediction probability of $t_i$, given by the $k$-th MTP module. 
-Finally, we compute the average of the MTP losses across all depths and multiply it by a weighting factor $\lambda$ to obtain the overall MTP loss $\mathcal{L}_{\text{MTP}}$, which serves as an additional training objective for \dsviii{}:
+其中 $T$ 表示输入序列长度，$t_i$ 表示第 $i$ 个位置的 ground-truth token，$P_i^k [t_i]$ 表示由第 $k$ 个 MTP 模块给出的 $t_i$ 的对应预测概率。
+最后，我们计算所有深度上 MTP 损失的平均值，并乘以权重因子 $\lambda$，得到总体 MTP 损失 $\mathcal{L}_{\text{MTP}}$，作为 \dsviii{} 的额外训练目标：
 \begin{equation}
     \mathcal{L}_{\text{MTP}} = \frac{\lambda}{D} \sum_{k=1}^{D} \mathcal{L}_{\text{MTP}}^{k}.
 \end{equation}
 
-\paragraph{MTP in Inference.}
-Our MTP strategy mainly aims to improve the performance of the main model, so during inference, we can directly discard the MTP modules and the main model can function independently and normally.
-Additionally, we can also repurpose these MTP modules for speculative decoding to further improve the generation latency.
+\paragraph{推理中的 MTP。}
+我们的 MTP 策略主要旨在提升主模型性能，因此在推理期间，我们可以直接丢弃 MTP 模块，主模型仍可独立正常工作。
+此外，我们也可以将这些 MTP 模块重新用于 speculative decoding，以进一步改善生成延迟。
 
-\section{Infrastructures}
+\section{基础设施}
 \label{sec:infra}
 
-\subsection{Compute Clusters}
+\subsection{计算集群}
 
-\dsviii{} is trained on a cluster equipped with 2048 NVIDIA H800 GPUs. 
-Each node in the H800 cluster contains 8 GPUs connected by NVLink and NVSwitch within nodes. 
-Across different nodes, InfiniBand~(IB) interconnects are utilized to facilitate communications.
+\dsviii{} 在配备 2048 块 NVIDIA H800 GPU 的集群上训练。
+H800 集群中的每个节点包含 8 块 GPU，节点内通过 NVLink 和 NVSwitch 连接。
+不同节点之间使用 InfiniBand~(IB) 互连进行通信。
 
-\subsection{Training Framework}
+\subsection{训练框架}
 
-The training of \dsviii{} is supported by the HAI-LLM framework, an efficient and lightweight training framework crafted by our engineers from the ground up. 
-On the whole, \dsviii{} applies 16-way Pipeline Parallelism (PP)~\citep{qi2023zero}, 64-way Expert Parallelism (EP)~\citep{gshard} spanning 8 nodes, and ZeRO-1 Data Parallelism (DP)~\citep{zero}. 
+\dsviii{} 的训练由 HAI-LLM 框架支持，这是我们的工程师从零构建的高效轻量训练框架。
+总体而言，\dsviii{} 采用 16-way Pipeline Parallelism (PP)~\citep{qi2023zero}、跨 8 个节点的 64-way Expert Parallelism (EP)~\citep{gshard}，以及 ZeRO-1 Data Parallelism (DP)~\citep{zero}。
 
-In order to facilitate efficient training of \dsviii{}, we implement meticulous engineering optimizations.
-Firstly, we design the DualPipe algorithm for efficient pipeline parallelism.
-Compared with existing PP methods, DualPipe has fewer pipeline bubbles. 
-More importantly, it overlaps the computation and communication phases across forward and backward processes, thereby addressing the challenge of heavy communication overhead introduced by cross-node expert parallelism. 
-Secondly, we develop efficient cross-node all-to-all communication kernels to fully utilize IB and NVLink bandwidths and conserve Streaming Multiprocessors (SMs) dedicated to communication. 
-Finally, we meticulously optimize the memory footprint during training, thereby enabling us to train \dsviii{} without using costly Tensor Parallelism~(TP).
+为支持 \dsviii{} 的高效训练，我们进行了细致的工程优化。
+首先，我们设计了用于高效 pipeline parallelism 的 DualPipe 算法。
+与现有 PP 方法相比，DualPipe 具有更少的 pipeline bubbles。
+更重要的是，它在前向和反向过程中重叠计算与通信阶段，从而应对跨节点 expert parallelism 带来的重通信开销挑战。
+其次，我们开发了高效的跨节点 all-to-all 通信 kernel，以充分利用 IB 和 NVLink 带宽，并节省专用于通信的 Streaming Multiprocessors (SMs)。
+最后，我们细致优化训练期间的内存占用，使得无需使用昂贵的 Tensor Parallelism~(TP) 也能训练 \dsviii{}。
 
-\subsubsection{DualPipe and Computation-Communication Overlap}
+\subsubsection{DualPipe 与计算通信重叠}
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.9\textwidth]{figures/overlap.pdf}
     \caption{
-        Overlapping strategy for a pair of individual forward and backward chunks (the boundaries of the transformer blocks are not aligned). 
-        Orange denotes forward, green denotes "backward for input", blue denotes "backward for weights", purple denotes PP communication, and red denotes barriers.
-        Both all-to-all and PP communication can be fully hidden. 
+        一对独立前向和反向 chunk 的重叠策略，transformer block 边界并未对齐。
+        橙色表示前向，绿色表示 ``backward for input''，蓝色表示 ``backward for weights''，紫色表示 PP 通信，红色表示 barrier。
+        all-to-all 和 PP 通信都可以被完全隐藏。
     }
     \label{fig:transformer-overlap}
 \end{figure}
 
-For \dsviii{}, the communication overhead introduced by cross-node expert parallelism results in an inefficient computation-to-communication ratio of approximately 1:1. 
-To tackle this challenge, we design an innovative pipeline parallelism algorithm called DualPipe, which not only accelerates model training by effectively overlapping forward and backward computation-communication phases, but also reduces the pipeline bubbles.
+对于 \dsviii{}，跨节点 expert parallelism 引入的通信开销导致计算通信比低效，约为 1:1。
+为应对这一挑战，我们设计了名为 DualPipe 的创新 pipeline parallelism 算法，它不仅通过有效重叠前向和反向的计算通信阶段来加速模型训练，还减少了 pipeline bubbles。
 
-The key idea of DualPipe is to overlap the computation and communication within a pair of individual forward and backward chunks.
-To be specific, we divide each chunk into four components: \texttt{attention}, \texttt{all-to-all dispatch}, \texttt{MLP}, and \texttt{all-to-all combine}. 
-Specially, for a backward chunk, both \texttt{attention} and \texttt{MLP} are further split into two parts, \texttt{backward for input} and \texttt{backward for weights}, like in ZeroBubble~\citep{zerobubble}. 
-In addition, we have a \texttt{PP communication} component. 
-As illustrated in Figure~\ref{fig:transformer-overlap}, for a pair of forward and backward chunks, we rearrange these components and manually adjust the ratio of GPU SMs dedicated to communication versus computation. 
-In this overlapping strategy, we can ensure that both all-to-all and PP communication can be fully hidden during execution. 
-Given the efficient overlapping strategy, the full DualPipe scheduling is illustrated in Figure~\ref{fig:dualpipe-schedules}. 
-It employs a bidirectional pipeline scheduling, which feeds micro-batches from both ends of the pipeline simultaneously and a significant portion of communications can be fully overlapped.
-This overlap also ensures that, as the model further scales up, as long as we maintain a constant computation-to-communication ratio, we can still employ fine-grained experts across nodes while achieving a near-zero all-to-all communication overhead.
+DualPipe 的核心思想是在一对独立的前向和反向 chunk 内重叠计算与通信。
+具体而言，我们将每个 chunk 划分为四个组件：\texttt{attention}、\texttt{all-to-all dispatch}、\texttt{MLP} 和 \texttt{all-to-all combine}。
+特别地，对于反向 chunk，\texttt{attention} 和 \texttt{MLP} 会像 ZeroBubble~\citep{zerobubble} 中一样进一步拆分为 \texttt{backward for input} 和 \texttt{backward for weights} 两部分。
+此外，我们还有 \texttt{PP communication} 组件。
+如图~\ref{fig:transformer-overlap} 所示，对于一对前向和反向 chunk，我们重新排列这些组件，并手动调整专用于通信与计算的 GPU SM 比例。
+在这种重叠策略下，我们可以确保 all-to-all 和 PP 通信在执行期间均被完全隐藏。
+基于高效的重叠策略，完整的 DualPipe 调度如图~\ref{fig:dualpipe-schedules} 所示。
+它采用双向 pipeline 调度，从 pipeline 两端同时输入 micro-batch，使很大一部分通信可以被完全重叠。
+这种重叠也保证了当模型进一步扩展时，只要保持恒定的计算通信比，我们仍可跨节点使用细粒度专家，并实现近乎为零的 all-to-all 通信开销。
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.99\linewidth]{figures/dualpipe.pdf}
     \caption{
-        Example DualPipe scheduling for 8 PP ranks and 20 micro-batches in two directions. 
-        The micro-batches in the reverse direction are symmetric to those in the forward direction, so we omit their batch ID for illustration simplicity. 
-        Two cells enclosed by a shared black border have mutually overlapped computation and communication. 
+        8 个 PP rank 和双向 20 个 micro-batch 的 DualPipe 调度示例。
+        反向 micro-batch 与前向 micro-batch 对称，因此为简化说明，我们省略其 batch ID。
+        由共享黑色边框围住的两个单元格表示计算与通信相互重叠。
     }
     \label{fig:dualpipe-schedules}
 \end{figure}
 
-In addition, even in more general scenarios without a heavy communication burden, DualPipe still exhibits efficiency advantages. 
-In Table~\ref{tab:dualpipe-bubble}, we summarize the pipeline bubbles and memory usage across different PP methods. 
-As shown in the table, compared with ZB1P~\citep{zerobubble} and 1F1B~\citep{pipedream}, DualPipe significantly reduces the pipeline bubbles while only increasing the peak activation memory by $\frac{1}{PP}$ times.
-Although DualPipe requires keeping two copies of the model parameters, this does not significantly increase the memory consumption since we use a large EP size during training. 
-Compared with Chimera~\citep{chimera}, DualPipe only requires that the pipeline stages and micro-batches be divisible by 2, without requiring micro-batches to be divisible by pipeline stages.
-In addition, for DualPipe, neither the bubbles nor activation memory will increase as the number of micro-batches grows.
+此外，即便在没有重通信负担的更一般场景中，DualPipe 仍展现出效率优势。
+在表~\ref{tab:dualpipe-bubble} 中，我们总结了不同 PP 方法的 pipeline bubbles 和内存使用。
+如表所示，与 ZB1P~\citep{zerobubble} 和 1F1B~\citep{pipedream} 相比，DualPipe 显著减少了 pipeline bubbles，而峰值激活内存仅增加 $\frac{1}{PP}$ 倍。
+尽管 DualPipe 需要保留两份模型参数，但由于训练期间使用较大的 EP size，这并不会显著增加内存消耗。
+与 Chimera~\citep{chimera} 相比，DualPipe 只要求 pipeline stages 和 micro-batches 可被 2 整除，而不要求 micro-batches 可被 pipeline stages 整除。
+此外，对于 DualPipe，bubbles 和激活内存都不会随着 micro-batches 数量增加而增长。
 
 \begin{table}[t]
     \centering
@@ -544,293 +544,293 @@ In addition, for DualPipe, neither the bubbles nor activation memory will increa
         \bottomrule
     \end{tabular}
     \caption{
-        Comparison of pipeline bubbles and memory usage across different pipeline parallel methods. $F$ denotes the execution time of a forward chunk, $B$ denotes the execution time of a full backward chunk, $W$ denotes the execution time of a "backward for weights" chunk, and $F\&B$ denotes the execution time of two mutually overlapped forward and backward chunks.
+        不同 pipeline parallel 方法的 pipeline bubbles 和内存使用比较。$F$ 表示前向 chunk 的执行时间，$B$ 表示完整反向 chunk 的执行时间，$W$ 表示 ``backward for weights'' chunk 的执行时间，$F\&B$ 表示两个相互重叠的前向和反向 chunk 的执行时间。
     }
     \label{tab:dualpipe-bubble}
 \end{table}
 
-\subsubsection{Efficient Implementation of Cross-Node All-to-All Communication}
+\subsubsection{跨节点 All-to-All 通信的高效实现}
 
-In order to ensure sufficient computational performance for DualPipe, we customize efficient cross-node all-to-all communication kernels (including dispatching and combining) to conserve the number of SMs dedicated to communication.
-The implementation of the kernels is co-designed with the MoE gating algorithm and the network topology of our cluster.
-To be specific, in our cluster, cross-node GPUs are fully interconnected with IB, and intra-node communications are handled via NVLink.
-NVLink offers a bandwidth of 160 GB/s, roughly 3.2 times that of IB (50 GB/s). 
-To effectively leverage the different bandwidths of IB and NVLink, we limit each token to be dispatched to at most 4 nodes, thereby reducing IB traffic.
-For each token, when its routing decision is made, it will first be transmitted via IB to the GPUs with the same in-node index on its target nodes. 
-Once it reaches the target nodes, we will endeavor to ensure that it is instantaneously forwarded via NVLink to specific GPUs that host their target experts, without being blocked by subsequently arriving tokens.
-In this way, communications via IB and NVLink are fully overlapped, and each token can efficiently select an average of 3.2 experts per node without incurring additional overhead from NVLink.
-This implies that, although \dsviii{} selects only 8 routed experts in practice, it can scale up this number to a maximum of 13 experts (4 nodes $\times$ 3.2 experts/node) while preserving the same communication cost.
-Overall, under such a communication strategy, only 20 SMs are sufficient to fully utilize the bandwidths of IB and NVLink.
+为确保 DualPipe 具备充足的计算性能，我们定制了高效的跨节点 all-to-all 通信 kernel，包括 dispatching 和 combining，以节省专用于通信的 SM 数量。
+这些 kernel 的实现与 MoE gating 算法以及我们集群的网络拓扑协同设计。
+具体而言，在我们的集群中，跨节点 GPU 通过 IB 完全互连，节点内通信则通过 NVLink 处理。
+NVLink 提供 160 GB/s 带宽，约为 IB，50 GB/s，的 3.2 倍。
+为有效利用 IB 和 NVLink 的不同带宽，我们限制每个 token 最多被分发到 4 个节点，从而减少 IB 流量。
+对于每个 token，当其路由决策确定后，它首先会通过 IB 传输到目标节点上具有相同节点内索引的 GPU。
+到达目标节点后，我们会尽力确保它立即通过 NVLink 转发到承载目标专家的特定 GPU，而不会被随后到达的 token 阻塞。
+通过这种方式，IB 和 NVLink 通信被完全重叠，每个 token 可以在不产生额外 NVLink 开销的情况下，平均每个节点高效选择 3.2 个专家。
+这意味着，尽管 \dsviii{} 在实践中只选择 8 个路由专家，但在保持相同通信成本的同时，这一数量最多可以扩展到 13 个专家，4 个节点 $\times$ 3.2 个专家/节点。
+总体而言，在这种通信策略下，仅 20 个 SM 就足以充分利用 IB 和 NVLink 的带宽。
 
-In detail, we employ the warp specialization technique~\citep{warp-spec} and partition 20 SMs into 10 communication channels.
-During the dispatching process, (1) IB sending, (2) IB-to-NVLink forwarding, and (3) NVLink receiving are handled by respective warps. 
-The number of warps allocated to each communication task is dynamically adjusted according to the actual workload across all SMs. 
-Similarly, during the combining process, (1) NVLink sending, (2) NVLink-to-IB forwarding and accumulation, and (3) IB receiving and accumulation are also handled by dynamically adjusted warps. 
-In addition, both dispatching and combining kernels overlap with the computation stream, so we also consider their impact on other SM computation kernels. 
-Specifically, we employ customized PTX (Parallel Thread Execution) instructions and auto-tune the communication chunk size, which significantly reduces the use of the L2 cache and the interference to other SMs. 
+具体而言，我们采用 warp specialization 技术~\citep{warp-spec}，并将 20 个 SM 划分为 10 个通信通道。
+在 dispatching 过程中，(1) IB 发送，(2) IB-to-NVLink 转发，以及 (3) NVLink 接收分别由对应 warp 处理。
+分配给每个通信任务的 warp 数量会根据所有 SM 上的实际工作负载动态调整。
+类似地，在 combining 过程中，(1) NVLink 发送，(2) NVLink-to-IB 转发与累加，以及 (3) IB 接收与累加也由动态调整的 warp 处理。
+此外，dispatching 和 combining kernel 都会与计算流重叠，因此我们也考虑它们对其他 SM 计算 kernel 的影响。
+具体而言，我们使用定制 PTX (Parallel Thread Execution) 指令，并自动调优通信 chunk 大小，从而显著减少 L2 cache 使用和对其他 SM 的干扰。
 
-\subsubsection{Extremely Memory Saving with Minimal Overhead}
+\subsubsection{以极小开销大幅节省内存}
 
-In order to reduce the memory footprint during training, we employ the following techniques.
+为降低训练期间的内存占用，我们采用以下技术。
 
-\paragraph{Recomputation of RMSNorm and MLA Up-Projection.}
+\paragraph{RMSNorm 与 MLA Up-Projection 的重计算。}
 
-We recompute all RMSNorm operations and MLA up-projections during back-propagation, thereby eliminating the need to persistently store their output activations.
-With a minor overhead, this strategy significantly reduces memory requirements for storing activations. 
+我们在反向传播期间重计算所有 RMSNorm 操作和 MLA up-projections，从而无需持久存储它们的输出激活。
+该策略只带来很小开销，却显著降低了存储激活所需的内存。
 
-\paragraph{Exponential Moving Average in CPU.}
-During training, we preserve the Exponential Moving Average (EMA) of the model parameters for early estimation of the model performance after learning rate decay.
-The EMA parameters are stored in CPU memory and are updated asynchronously after each training step. 
-This method allows us to maintain EMA parameters without incurring additional memory or time overhead.
+\paragraph{CPU 中的 Exponential Moving Average。}
+训练期间，我们保留模型参数的 Exponential Moving Average (EMA)，用于在学习率衰减后早期估计模型性能。
+EMA 参数存储在 CPU 内存中，并在每个训练 step 之后异步更新。
+该方法使我们能够维护 EMA 参数，而不产生额外显存或时间开销。
 
-\paragraph{Shared Embedding and Output Head for Multi-Token Prediction.}
-With the DualPipe strategy, we deploy the shallowest layers (including the embedding layer) and deepest layers (including the output head) of the model on the same PP rank. 
-This arrangement enables the physical sharing of parameters and gradients, of the shared embedding and output head, between the MTP module and the main model.
-This physical sharing mechanism further enhances our memory efficiency. 
+\paragraph{Multi-Token Prediction 的共享 Embedding 与输出头。}
+借助 DualPipe 策略，我们将模型最浅层，包括 embedding 层，和最深层，包括输出头，部署在同一 PP rank 上。
+这种安排使 MTP 模块与主模型之间能够对共享 embedding 和输出头进行参数与梯度的物理共享。
+该物理共享机制进一步提升了内存效率。
 
-\subsection{FP8 Training}
+\subsection{FP8 训练}
 
 \input{content/fp8.tex}
 
-\subsection{Inference and Deployment}
+\subsection{推理与部署}
 \label{sec:inference_deployment}
 
-We deploy \dsviii{} on the H800 cluster, where GPUs within each node are interconnected using NVLink, and all GPUs across the cluster are fully interconnected via IB. 
-To simultaneously ensure both the Service-Level Objective (SLO) for online services and high throughput, we employ the following deployment strategy that separates the \textit{prefilling} and \textit{decoding} stages.
+我们在 H800 集群上部署 \dsviii{}，其中每个节点内的 GPU 使用 NVLink 互连，集群中所有 GPU 通过 IB 完全互连。
+为同时保证在线服务的 Service-Level Objective (SLO) 和高吞吐，我们采用如下部署策略，将 \textit{prefilling} 与 \textit{decoding} 阶段分离。
 
-\subsubsection{Prefilling}
+\subsubsection{预填充}
 
-The minimum deployment unit of the prefilling stage consists of 4 nodes with 32 GPUs. 
-The \texttt{attention} part employs 4-way Tensor Parallelism (TP4) with Sequence Parallelism (SP), combined with 8-way Data Parallelism (DP8).
-Its small TP size of 4 limits the overhead of TP communication. 
-For the \texttt{MoE} part, we use 32-way Expert Parallelism (EP32), which ensures that each expert processes a sufficiently large batch size, thereby enhancing computational efficiency. 
-For the \texttt{MoE} all-to-all communication, we use the same method as in training: first transferring tokens across nodes via IB, and then forwarding among the intra-node GPUs via NVLink. 
-In particular, we use 1-way Tensor Parallelism for the dense MLPs in shallow layers to save TP communication.
+Prefilling 阶段的最小部署单元由 4 个节点和 32 块 GPU 组成。
+\texttt{attention} 部分采用 4-way Tensor Parallelism (TP4) 与 Sequence Parallelism (SP)，并结合 8-way Data Parallelism (DP8)。
+其较小的 TP size 4 限制了 TP 通信开销。
+对于 \texttt{MoE} 部分，我们使用 32-way Expert Parallelism (EP32)，以确保每个专家处理足够大的 batch size，从而提高计算效率。
+对于 \texttt{MoE} all-to-all 通信，我们使用与训练相同的方法：首先通过 IB 跨节点传输 token，然后通过 NVLink 在节点内 GPU 之间转发。
+特别地，我们对浅层中的 dense MLP 使用 1-way Tensor Parallelism，以节省 TP 通信。
 
-To achieve load balancing among different experts in the \texttt{MoE} part, we need to ensure that each GPU processes approximately the same number of tokens.  
-To this end, we introduce a deployment strategy of \textit{redundant experts}, which duplicates high-load experts and deploys them redundantly. 
-The high-load experts are detected based on statistics collected during the online deployment and are adjusted periodically (e.g., every 10 minutes). 
-After determining the set of redundant experts, we carefully rearrange experts among GPUs within a node based on the observed loads, striving to balance the load across GPUs as much as possible without increasing the cross-node all-to-all communication overhead. 
-For the deployment of \dsviii{}, we set 32 redundant experts for the prefilling stage. 
-For each GPU, besides the original 8 experts it hosts, it will also host one additional redundant expert.
+为实现 \texttt{MoE} 部分不同专家之间的负载均衡，我们需要确保每块 GPU 处理的 token 数大致相同。
+为此，我们引入 \textit{redundant experts} 部署策略，复制高负载专家并进行冗余部署。
+高负载专家基于在线部署期间收集的统计信息检测，并定期调整，例如每 10 分钟一次。
+确定冗余专家集合后，我们基于观察到的负载，在节点内 GPU 之间仔细重新排列专家，力求在不增加跨节点 all-to-all 通信开销的情况下，尽可能平衡各 GPU 的负载。
+对于 \dsviii{} 的部署，我们在 prefilling 阶段设置 32 个冗余专家。
+对于每块 GPU，除其原本承载的 8 个专家外，还会额外承载 1 个冗余专家。
 
-Furthermore, in the prefilling stage, to improve the throughput and hide the overhead of all-to-all and TP communication, we simultaneously process two micro-batches with similar computational workloads, overlapping the \texttt{attention} and \texttt{MoE} of one micro-batch with the \texttt{dispatch} and \texttt{combine} of another. 
+此外，在 prefilling 阶段，为提升吞吐并隐藏 all-to-all 与 TP 通信开销，我们同时处理两个计算负载相近的 micro-batch，将一个 micro-batch 的 \texttt{attention} 和 \texttt{MoE} 与另一个 micro-batch 的 \texttt{dispatch} 和 \texttt{combine} 重叠。
 
-Finally, we are exploring a \textit{dynamic redundancy} strategy for experts, where each GPU hosts more experts (e.g., 16 experts), but only 9 will be activated during each inference step. 
-Before the all-to-all operation at each layer begins, we compute the globally optimal routing scheme on the fly. 
-Given the substantial computation involved in the prefilling stage, the overhead of computing this routing scheme is almost negligible.
+最后，我们正在探索专家的 \textit{dynamic redundancy} 策略，即每块 GPU 承载更多专家，例如 16 个专家，但每个推理 step 只激活 9 个。
+在每层的 all-to-all 操作开始前，我们即时计算全局最优路由方案。
+考虑到 prefilling 阶段涉及大量计算，计算该路由方案的开销几乎可以忽略。
 
-\subsubsection{Decoding}
+\subsubsection{解码}
 
-During decoding, we treat the shared expert as a routed one. 
-From this perspective, each token will select 9 experts during routing, where the shared expert is regarded as a heavy-load one that will always be selected. 
-The minimum deployment unit of the decoding stage consists of 40 nodes with 320 GPUs. 
-The \texttt{attention} part employs TP4 with SP, combined with DP80, while the \texttt{MoE} part uses EP320. 
-For the \texttt{MoE} part, each GPU hosts only one expert, and 64 GPUs are responsible for hosting redundant experts and shared experts.
-All-to-all communication of the \texttt{dispatch} and \texttt{combine} parts is performed via direct point-to-point transfers over IB to achieve low latency. 
-Additionally, we leverage the IBGDA~\citep{nvidia_ibgda} technology to further minimize latency and enhance communication efficiency.
+在 decoding 期间，我们将共享专家视为路由专家。
+从这一角度看，每个 token 在路由期间会选择 9 个专家，其中共享专家被视为一个总会被选择的重负载专家。
+Decoding 阶段的最小部署单元由 40 个节点和 320 块 GPU 组成。
+\texttt{attention} 部分采用带 SP 的 TP4，并结合 DP80，而 \texttt{MoE} 部分使用 EP320。
+对于 \texttt{MoE} 部分，每块 GPU 仅承载一个专家，另外 64 块 GPU 负责承载冗余专家和共享专家。
+\texttt{dispatch} 和 \texttt{combine} 部分的 all-to-all 通信通过 IB 上的直接点对点传输执行，以实现低延迟。
+此外，我们使用 IBGDA~\citep{nvidia_ibgda} 技术进一步降低延迟并提升通信效率。
 
-Similar to prefilling, we periodically determine the set of redundant experts in a certain interval, based on the statistical expert load from our online service. 
-However, we do not need to rearrange experts since each GPU only hosts one expert. 
-We are also exploring the \textit{dynamic redundancy} strategy for decoding. 
-However, this requires more careful optimization of the algorithm that computes the globally optimal routing scheme and the fusion with the \texttt{dispatch} kernel to reduce overhead.
+与 prefilling 类似，我们基于在线服务中的专家负载统计，以一定间隔周期性确定冗余专家集合。
+不过，由于每块 GPU 只承载一个专家，我们无需重新排列专家。
+我们也在探索用于 decoding 的 \textit{dynamic redundancy} 策略。
+然而，这需要更仔细地优化用于计算全局最优路由方案的算法，并优化其与 \texttt{dispatch} kernel 的融合，以降低开销。
 
-Additionally, to enhance throughput and hide the overhead of all-to-all communication, we are also exploring processing two micro-batches with similar computational workloads simultaneously in the decoding stage. 
-Unlike prefilling, \texttt{attention} consumes a larger portion of time in the decoding stage. Therefore, we overlap the \texttt{attention} of one micro-batch with the \texttt{dispatch+MoE+combine} of another.
-In the decoding stage, the batch size per expert is relatively small (usually within 256 tokens), and the bottleneck is memory access rather than computation. 
-Since the \texttt{MoE} part only needs to load the parameters of one expert, the memory access overhead is minimal, so using fewer SMs will not significantly affect the overall performance.
-Therefore, to avoid impacting the computation speed of the \texttt{attention} part, we can allocate only a small portion of SMs to \texttt{dispatch+MoE+combine}. 
+此外，为提升吞吐并隐藏 all-to-all 通信开销，我们也在探索 decoding 阶段同时处理两个计算负载相近的 micro-batch。
+不同于 prefilling，\texttt{attention} 在 decoding 阶段占用更大比例的时间。因此，我们将一个 micro-batch 的 \texttt{attention} 与另一个 micro-batch 的 \texttt{dispatch+MoE+combine} 重叠。
+在 decoding 阶段，每个专家的 batch size 相对较小，通常在 256 个 token 以内，瓶颈是内存访问而非计算。
+由于 \texttt{MoE} 部分只需加载一个专家的参数，内存访问开销很小，因此使用更少 SM 不会显著影响整体性能。
+因此，为避免影响 \texttt{attention} 部分的计算速度，我们可以只为 \texttt{dispatch+MoE+combine} 分配少量 SM。
 
-\subsection{Suggestions on Hardware Design}
+\subsection{硬件设计建议}
 \label{fp8_hardware_design}
 
-Based on our implementation of the all-to-all communication and FP8 training scheme, we propose the following suggestions on chip design to AI hardware vendors.
+基于我们对 all-to-all 通信和 FP8 训练方案的实现，我们向 AI 硬件厂商提出以下芯片设计建议。
 
-\subsubsection{Communication Hardware}
+\subsubsection{通信硬件}
 
-In \dsviii{}, we implement the overlap between computation and communication to hide the communication latency during computation. 
-This significantly reduces the dependency on communication bandwidth compared to serial computation and communication. 
-However, the current communication implementation relies on expensive SMs (e.g., we allocate 20 out of the 132 SMs available in the H800 GPU for this purpose), which will limit the computational throughput.
-Moreover, using SMs for communication results in significant inefficiencies, as tensor cores remain entirely under-utilized.
+在 \dsviii{} 中，我们实现了计算与通信的重叠，以在计算期间隐藏通信延迟。
+相较串行计算和通信，这显著降低了对通信带宽的依赖。
+然而，当前通信实现依赖昂贵的 SM，例如我们为此分配了 H800 GPU 可用 132 个 SM 中的 20 个，这会限制计算吞吐。
+此外，使用 SM 进行通信会造成显著低效，因为 tensor cores 完全未被利用。
 
-Currently, the SMs primarily perform the following tasks for all-to-all communication:
+当前，SM 主要为 all-to-all 通信执行以下任务：
 \begin{itemize}[topsep=0pt]
     \item 
-    \textbf{Forwarding data} between the IB (InfiniBand) and NVLink domain while aggregating IB traffic destined for multiple GPUs within the same node from a single GPU.
+    在 IB (InfiniBand) 与 NVLink 域之间\textbf{转发数据}，同时从单块 GPU 聚合发往同一节点内多块 GPU 的 IB 流量。
     \item 
-    \textbf{Transporting data} between RDMA buffers (registered GPU memory regions) and input/output buffers.
+    在 RDMA 缓冲区，已注册的 GPU 内存区域，与输入/输出缓冲区之间\textbf{传输数据}。
     \item 
-    \textbf{Executing \texttt{reduce} operations} for \texttt{all-to-all} \texttt{combine}.
+    为 \texttt{all-to-all} \texttt{combine}\textbf{执行 \texttt{reduce} 操作}。
     \item
-    \textbf{Managing fine-grained memory layout} during chunked data transferring to multiple experts across the IB and NVLink domain.
+    在跨 IB 和 NVLink 域向多个专家分块传输数据期间，\textbf{管理细粒度内存布局}。
 \end{itemize}
 
-We aspire to see future vendors developing hardware that offloads these communication tasks from the valuable computation unit SM, serving as a GPU co-processor or a network co-processor like NVIDIA SHARP~\cite{nvsharp}. 
-Furthermore, to reduce application programming complexity, we aim for this hardware to unify the IB (scale-out) and NVLink (scale-up) networks from the perspective of the computation units. 
-With this unified interface, computation units can easily accomplish operations such as \texttt{read}, \texttt{write}, \texttt{multicast}, and \texttt{reduce} across the entire IB-NVLink-unified domain via submitting communication requests based on simple primitives.
+我们期待未来厂商开发硬件，将这些通信任务从宝贵的计算单元 SM 上卸载，作为 GPU 协处理器或类似 NVIDIA SHARP~\cite{nvsharp} 的网络协处理器。
+此外，为降低应用编程复杂度，我们希望该硬件从计算单元视角统一 IB，scale-out，和 NVLink，scale-up，网络。
+借助这一统一接口，计算单元可以通过基于简单原语提交通信请求，在整个 IB-NVLink 统一域内轻松完成 \texttt{read}、\texttt{write}、\texttt{multicast} 和 \texttt{reduce} 等操作。
 
-\subsubsection{Compute Hardware}
+\subsubsection{计算硬件}
 
-\paragraph{Higher FP8 GEMM Accumulation Precision in Tensor Cores.}
-In the current Tensor Core implementation of the NVIDIA Hopper architecture, FP8 GEMM suffers from limited accumulation precision. After aligning 32 mantissa products by right-shifting based on the maximum exponent, the Tensor Core only uses the highest 14 bits of each mantissa product for addition, and truncates bits exceeding this range. The accumulation of addition results into registers also employs 14-bit precision. Our implementation partially mitigates the limitation by accumulating the addition results of 128 FP8$\times$FP8 multiplications into registers with FP32 precision in the CUDA core. 
-Although helpful in achieving successful FP8 training, it is merely a compromise due to the Hopper architecture's hardware deficiency in FP8 GEMM accumulation precision.
-Future chips need to adopt higher precision.
+\paragraph{Tensor Cores 中更高的 FP8 GEMM 累加精度。}
+在 NVIDIA Hopper 架构当前的 Tensor Core 实现中，FP8 GEMM 受到累加精度有限的影响。在根据最大指数右移对齐 32 个尾数乘积后，Tensor Core 只使用每个尾数乘积的最高 14 bit 进行加法，并截断超出该范围的 bit。将加法结果累加到寄存器时也使用 14-bit 精度。我们的实现通过在 CUDA core 中以 FP32 精度将 128 次 FP8$\times$FP8 乘法的加法结果累加到寄存器，部分缓解了这一限制。
+尽管这有助于实现成功的 FP8 训练，但它只是 Hopper 架构在 FP8 GEMM 累加精度上的硬件不足所导致的一种折中。
+未来芯片需要采用更高精度。
 %Therefore, we recommend future chips to support \texttt{at} \texttt{least} 14-bit accumulation precision for 32 mantissa products’ parallel addition and FP32 precision for register accumulation in Tensor Cores, to maintain FP8 training accuracy. We also suggest increasing the parallel addition precision towards full-precision FP32 if feasible.
 
-\paragraph{Support for Tile- and Block-Wise Quantization.}
-Current GPUs only support per-tensor quantization, lacking the native support for fine-grained quantization like our tile- and block-wise quantization.
-In the current implementation, when the $N_C$ interval is reached, the partial results will be copied from Tensor Cores to CUDA cores, multiplied by the scaling factors, and added to FP32 registers on CUDA cores.
-Although the dequantization overhead is significantly mitigated combined with our precise FP32 accumulation strategy, the frequent data movements between Tensor Cores and CUDA cores still limit the computational efficiency. 
-Therefore, we recommend future chips to support fine-grained quantization by enabling Tensor Cores to receive scaling factors and implement MMA with group scaling. 
-In this way, the whole partial sum accumulation and dequantization can be completed directly inside Tensor Cores until the final result is produced, avoiding frequent data movements.
+\paragraph{支持 Tile- 和 Block-Wise 量化。}
+当前 GPU 仅支持 per-tensor 量化，缺乏对我们 tile- 和 block-wise 量化这类细粒度量化的原生支持。
+在当前实现中，当达到 $N_C$ 间隔时，部分结果会从 Tensor Cores 复制到 CUDA cores，乘以缩放因子，并加到 CUDA cores 上的 FP32 寄存器中。
+尽管结合我们精确的 FP32 累加策略后，反量化开销得到显著缓解，但 Tensor Cores 与 CUDA cores 之间频繁的数据移动仍限制了计算效率。
+因此，我们建议未来芯片通过使 Tensor Cores 能够接收缩放因子并实现带 group scaling 的 MMA，来支持细粒度量化。
+这样，整个部分和累加与反量化过程都可以直接在 Tensor Cores 内完成，直到产生最终结果，从而避免频繁的数据移动。
 
-\paragraph{Support for Online Quantization.}
-The current implementations struggle to effectively support online quantization, despite its effectiveness demonstrated in our research. 
-In the existing process, we need to read 128 BF16 activation values (the output of the previous computation) from HBM (High Bandwidth Memory) for quantization, and the quantized FP8 values are then written back to HBM, only to be read again for MMA. 
-To address this inefficiency, we recommend that future chips integrate FP8 cast and TMA (Tensor Memory Accelerator) access into a single fused operation, so quantization can be completed during the transfer of activations from global memory to shared memory, avoiding frequent memory reads and writes. 
-We also recommend supporting a warp-level cast instruction for speedup, which further facilitates the better fusion of layer normalization and FP8 cast.
-Alternatively, a near-memory computing approach can be adopted, where compute logic is placed near the HBM. 
-In this case, BF16 elements can be cast to FP8 directly as they are read from HBM into the GPU, reducing off-chip memory access by roughly 50\%. 
+\paragraph{支持在线量化。}
+尽管我们的研究已证明在线量化的有效性，当前实现仍难以有效支持在线量化。
+在现有流程中，我们需要从 HBM (High Bandwidth Memory) 读取 128 个 BF16 激活值，即前一计算的输出，用于量化；量化后的 FP8 值随后被写回 HBM，之后又为 MMA 再次读取。
+为解决这一低效问题，我们建议未来芯片将 FP8 cast 与 TMA (Tensor Memory Accelerator) 访问融合为单个操作，使量化能在激活从全局内存传输到共享内存期间完成，从而避免频繁的内存读写。
+我们还建议支持 warp-level cast 指令以加速，这也进一步促进 layer normalization 与 FP8 cast 的更好融合。
+另一种选择是采用 near-memory computing 方法，将计算逻辑放置在 HBM 附近。
+在这种情况下，BF16 元素从 HBM 读入 GPU 时即可直接转换为 FP8，从而将片外内存访问减少约 50\%。
 
-\paragraph{Support for Transposed GEMM Operations.}
-The current architecture makes it cumbersome to fuse matrix transposition with GEMM operations. 
-In our workflow, activations during the forward pass are quantized into \texttt{1x128} FP8 tiles and stored. 
-During the backward pass, the matrix needs to be read out, dequantized, transposed, re-quantized into \texttt{128x1} tiles, and stored in HBM. 
-To reduce memory operations, we recommend future chips to enable direct transposed reads of matrices from shared memory before MMA operation, for those precisions required in both training and inference. Combined with the fusion of FP8 format conversion and TMA access, this enhancement will significantly streamline the quantization workflow.
+\paragraph{支持转置 GEMM 操作。}
+当前架构使矩阵转置与 GEMM 操作的融合较为繁琐。
+在我们的工作流中，前向传播期间的激活被量化为 \texttt{1x128} FP8 tile 并存储。
+在反向传播期间，矩阵需要被读出、反量化、转置、重新量化为 \texttt{128x1} tile，并存储到 HBM。
+为减少内存操作，我们建议未来芯片针对训练和推理都需要的精度，在 MMA 操作前支持从共享内存直接转置读取矩阵。结合 FP8 格式转换与 TMA 访问的融合，这项增强将显著简化量化工作流。
 
-\section{Pre-Training}
+\section{预训练}
 \label{sec:pre-training}
 
-\subsection{Data Construction}
+\subsection{数据构建}
 
-Compared with \dsvii{}, we optimize the pre-training corpus by enhancing the ratio of mathematical and programming samples, while expanding multilingual coverage beyond English and Chinese. 
-Also, our data processing pipeline is refined to minimize redundancy while maintaining corpus diversity. 
-Inspired by \citet{Ding2024FewerTI}, we implement the document packing method for data integrity but do not incorporate cross-sample attention masking during training. 
-Finally, the training corpus for \dsviii{} consists of 14.8T high-quality and diverse tokens in our tokenizer. 
+与 \dsvii{} 相比，我们通过提高数学和编程样本比例来优化预训练语料，同时将多语言覆盖范围扩展到英语和中文之外。
+此外，我们改进了数据处理流水线，在保持语料多样性的同时尽量减少冗余。
+受 \citet{Ding2024FewerTI} 启发，我们为保持数据完整性实现了文档打包方法，但在训练中未加入跨样本注意力掩码。
+最终，\dsviii{} 的训练语料在我们的 tokenizer 下包含 14.8T 个高质量且多样的 token。
 
-In the training process of DeepSeekCoder-V2~\citep{dscodervii}, we observe that the Fill-in-Middle~(FIM) strategy does not compromise the next-token prediction capability while enabling the model to accurately predict middle text based on contextual cues. 
-In alignment with DeepSeekCoder-V2, we also incorporate the FIM strategy in the pre-training of \dsviii{}. 
-To be specific, we employ the Prefix-Suffix-Middle (PSM) framework to structure data as follows:
+在 DeepSeekCoder-V2~\citep{dscodervii} 的训练过程中，我们观察到 Fill-in-Middle~(FIM) 策略不会损害 next-token 预测能力，同时使模型能够基于上下文线索准确预测中间文本。
+与 DeepSeekCoder-V2 保持一致，我们也在 \dsviii{} 的预训练中引入 FIM 策略。
+具体而言，我们采用 Prefix-Suffix-Middle (PSM) 框架按如下方式组织数据：
 \begin{align}
 \texttt{<|fim\_begin|>}f_{\text{pre}}\texttt{<|fim\_hole|>}f_{\text{suf}}\texttt{<|fim\_end|>}f_{\text{middle}}\texttt{<|eos\_token|>} . \nonumber
 \end{align}
-This structure is applied at the document level as a part of the pre-packing process. 
-The FIM strategy is applied at a rate of 0.1, consistent with the PSM framework.
+该结构作为预打包过程的一部分在文档级别应用。
+FIM 策略以 0.1 的比例应用，并与 PSM 框架保持一致。
 
-The tokenizer for \dsviii{} employs Byte-level BPE~\citep{shibata1999byte} with an extended vocabulary of 128K tokens. 
-The pretokenizer and training data for our tokenizer are modified to optimize multilingual compression efficiency. 
-In addition, compared with \dsvii{}, the new pretokenizer introduces tokens that combine punctuations and line breaks. 
-However, this trick may introduce the token boundary bias~\citep{tokenboundary} when the model processes multi-line prompts without terminal line breaks, particularly for few-shot evaluation prompts. 
-To address this issue, we randomly split a certain proportion of such combined tokens during training, which exposes the model to a wider array of special cases and mitigates this bias. 
+\dsviii{} 的 tokenizer 采用 Byte-level BPE~\citep{shibata1999byte}，并扩展到 128K token 的词表。
+我们修改了 tokenizer 的 pretokenizer 和训练数据，以优化多语言压缩效率。
+此外，与 \dsvii{} 相比，新的 pretokenizer 引入了组合标点和换行的 token。
+然而，当模型处理没有终止换行符的多行 prompt 时，尤其是在 few-shot 评估 prompt 中，该技巧可能引入 token boundary bias~\citep{tokenboundary}。
+为解决这一问题，我们在训练期间随机拆分一定比例的此类组合 token，使模型接触更广泛的特殊情况，并缓解该偏差。
 
-\subsection{Hyper-Parameters}
+\subsection{超参数}
 
-\paragraph{Model Hyper-Parameters.}
-We set the number of Transformer layers to 61 and the hidden dimension to 7168. 
-All learnable parameters are randomly initialized with a standard deviation of 0.006.
-In \dsattn{}, we set the number of attention heads $n_h$ to 128 and the per-head dimension $d_h$ to 128. 
-The KV compression dimension $d_c$ is set to 512, and the query compression dimension $d_c^{\prime}$ is set to 1536. 
-For the decoupled queries and key, we set the per-head dimension $d_h^R$ to 64. 
-We substitute all FFNs except for the first three layers with MoE layers. 
-Each MoE layer consists of 1 shared expert and 256 routed experts, where the intermediate hidden dimension of each expert is 2048. 
-Among the routed experts, 8 experts will be activated for each token, and each token will be ensured to be sent to at most 4 nodes. 
-The multi-token prediction depth $D$ is set to 1, i.e., besides the exact next token, each token will predict one additional token. 
-As \dsvii{}, \dsviii{} also employs additional RMSNorm layers after the compressed latent vectors, and multiplies additional scaling factors at the width bottlenecks. 
-Under this configuration, \dsviii{} comprises 671B total parameters, of which 37B are activated for each token. 
+\paragraph{模型超参数。}
+我们将 Transformer 层数设为 61，隐藏维度设为 7168。
+所有可学习参数均以标准差 0.006 随机初始化。
+在 \dsattn{} 中，我们将注意力头数量 $n_h$ 设为 128，每头维度 $d_h$ 设为 128。
+KV 压缩维度 $d_c$ 设为 512，query 压缩维度 $d_c^{\prime}$ 设为 1536。
+对于解耦 query 和 key，我们将每头维度 $d_h^R$ 设为 64。
+除前三层外，我们用 MoE 层替换所有 FFN。
+每个 MoE 层包含 1 个共享专家和 256 个路由专家，其中每个专家的中间隐藏维度为 2048。
+在路由专家中，每个 token 会激活 8 个专家，并确保每个 token 最多发送到 4 个节点。
+Multi-token prediction 深度 $D$ 设为 1，即除确切的下一个 token 外，每个 token 还会预测一个额外 token。
+与 \dsvii{} 一样，\dsviii{} 也在压缩隐向量后使用额外 RMSNorm 层，并在宽度瓶颈处乘以额外缩放因子。
+在该配置下，\dsviii{} 总参数量为 671B，其中每个 token 激活 37B 参数。
 
-\paragraph{Training Hyper-Parameters.}
-We employ the AdamW optimizer~\citep{adamW} with hyper-parameters set to $\beta_1=0.9$, $\beta_2=0.95$, and $\mathrm{weight\_decay}=0.1$. 
-We set the maximum sequence length to 4K during pre-training, and pre-train \dsviii{} on 14.8T tokens. 
-As for the learning rate scheduling, we first linearly increase it from 0 to $2.2 \times 10^{-4}$ during the first 2K steps. 
-Then, we keep a constant learning rate of $2.2 \times 10^{-4}$ until the model consumes 10T training tokens. 
-Subsequently, we gradually decay the learning rate to $2.2 \times 10^{-5}$ in 4.3T tokens, following a cosine decay curve. 
-During the training of the final 500B tokens, we keep a constant learning rate of $2.2 \times 10^{-5}$ in the first 333B tokens, and switch to another constant learning rate of $7.3 \times 10^{-6}$ in the remaining 167B tokens. 
-The gradient clipping norm is set to 1.0.
-We employ a batch size scheduling strategy, where the batch size is gradually increased from 3072 to 15360 in the training of the first 469B tokens, and then keeps 15360 in the remaining training. 
-We leverage pipeline parallelism to deploy different layers of a model on different GPUs, and for each layer, the routed experts will be uniformly deployed on 64 GPUs belonging to 8 nodes. 
-As for the node-limited routing, each token will be sent to at most 4 nodes (i.e., $M=4$). 
-For auxiliary-loss-free load balancing, we set the bias update speed $\gamma$ to 0.001 for the first 14.3T tokens, and to 0.0 for the remaining 500B tokens. 
-For the balance loss, we set $\alpha$ to 0.0001, just to avoid extreme imbalance within any single sequence. 
-The MTP loss weight $\lambda$ is set to 0.3 for the first 10T tokens, and to 0.1 for the remaining 4.8T tokens. 
+\paragraph{训练超参数。}
+我们使用 AdamW 优化器~\citep{adamW}，超参数设为 $\beta_1=0.9$、$\beta_2=0.95$ 和 $\mathrm{weight\_decay}=0.1$。
+预训练期间，我们将最大序列长度设为 4K，并在 14.8T 个 token 上预训练 \dsviii{}。
+对于学习率调度，我们首先在前 2K step 中将学习率从 0 线性提升到 $2.2 \times 10^{-4}$。
+随后，我们保持 $2.2 \times 10^{-4}$ 的恒定学习率，直到模型消耗 10T 个训练 token。
+之后，我们按照余弦衰减曲线，在 4.3T 个 token 内将学习率逐渐衰减到 $2.2 \times 10^{-5}$。
+在最后 500B 个 token 的训练期间，我们在前 333B 个 token 中保持 $2.2 \times 10^{-5}$ 的恒定学习率，并在剩余 167B 个 token 中切换到另一个恒定学习率 $7.3 \times 10^{-6}$。
+梯度裁剪范数设为 1.0。
+我们采用 batch size 调度策略，在前 469B 个 token 的训练中将 batch size 从 3072 逐渐增至 15360，并在剩余训练中保持 15360。
+我们使用 pipeline parallelism 将模型的不同层部署在不同 GPU 上；对于每一层，路由专家会均匀部署在属于 8 个节点的 64 块 GPU 上。
+对于 node-limited routing，每个 token 最多会被发送到 4 个节点，即 $M=4$。
+对于 auxiliary-loss-free 负载均衡，我们将偏置更新速度 $\gamma$ 在前 14.3T 个 token 中设为 0.001，在剩余 500B 个 token 中设为 0.0。
+对于平衡损失，我们将 $\alpha$ 设为 0.0001，仅用于避免任意单个序列内出现极端不均衡。
+MTP 损失权重 $\lambda$ 在前 10T 个 token 中设为 0.3，在剩余 4.8T 个 token 中设为 0.1。
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/needle_in_a_haystack.pdf}
 \caption{
-Evaluation results on the ''Needle In A Haystack'' (NIAH) tests. 
-\dsviii{} performs well across all context window lengths up to 128K. 
+``Needle In A Haystack'' (NIAH) 测试上的评估结果。
+\dsviii{} 在最高 128K 的所有上下文窗口长度上均表现良好。
 }
 \label{fig:long_context}
 \end{figure}
 
-\subsection{Long Context Extension}
+\subsection{长上下文扩展}
 
-We adopt a similar approach to \dsvii{}~\citep{dsvii} to enable long context capabilities in \dsviii{}. 
-After the pre-training stage, we apply YaRN~\citep{peng2023yarn} for context extension and perform two additional training phases, each comprising 1000 steps, to progressively expand the context window from 4K to 32K and then to 128K.
-The YaRN configuration is consistent with that used in \dsvii{}, being applied exclusively to the decoupled shared key $\mathbf{k}^R_t$.
-The hyper-parameters remain identical across both phases, with the scale $s = 40$, $\alpha = 1$, $\beta = 32$, and the scaling factor $\sqrt{t} = 0.1 \ln{s} + 1$.
-In the first phase, the sequence length is set to 32K, and the batch size is 1920. 
-During the second phase, the sequence length is increased to 128K, and the batch size is reduced to 480. 
-The learning rate for both phases is set to $7.3 \times 10^{-6}$, matching the final learning rate from the pre-training stage.
+我们采用与 \dsvii{}~\citep{dsvii} 类似的方法，使 \dsviii{} 具备长上下文能力。
+预训练阶段之后，我们应用 YaRN~\citep{peng2023yarn} 进行上下文扩展，并执行两个额外训练阶段，每个阶段包含 1000 step，将上下文窗口从 4K 逐步扩展到 32K，再扩展到 128K。
+YaRN 配置与 \dsvii{} 中使用的配置一致，并且仅应用于解耦共享 key $\mathbf{k}^R_t$。
+两个阶段的超参数保持相同，其中 scale $s = 40$，$\alpha = 1$，$\beta = 32$，缩放因子 $\sqrt{t} = 0.1 \ln{s} + 1$。
+第一阶段中，序列长度设为 32K，batch size 为 1920。
+第二阶段中，序列长度增加到 128K，batch size 降为 480。
+两个阶段的学习率均设为 $7.3 \times 10^{-6}$，与预训练阶段的最终学习率一致。
 
-Through this two-phase extension training, \dsviii{} is capable of handling inputs up to 128K in length while maintaining strong performance. 
-Figure~\ref{fig:long_context} illustrates that \dsviii{}, following supervised fine-tuning, achieves notable performance on the "Needle In A Haystack" (NIAH) test, demonstrating consistent robustness across context window lengths up to 128K.
+通过这种两阶段扩展训练，\dsviii{} 能够处理长度最高 128K 的输入，同时保持强劲性能。
+图~\ref{fig:long_context} 表明，经过 supervised fine-tuning 后，\dsviii{} 在 ``Needle In A Haystack'' (NIAH) 测试上取得显著性能，并在最高 128K 的上下文窗口长度上展现出一致的鲁棒性。
 
-\subsection{Evaluations}
+\subsection{评估}
 
 % [list considered benchmarks]
-\subsubsection{Evaluation Benchmarks}
+\subsubsection{评估基准}
 
-The base model of \dsviii{} is pretrained on a multilingual corpus with English and Chinese constituting the majority, so we evaluate its performance on a series of benchmarks primarily in English and Chinese, as well as on a multilingual benchmark.
-Our evaluation is based on our internal evaluation framework integrated in our HAI-LLM framework. 
-Considered benchmarks are categorized and listed as follows, where \underline{underlined} benchmarks are in Chinese and \uuline{double-underlined} benchmarks are multilingual ones:
+\dsviii{} 基础模型在以英文和中文为主的多语言语料上预训练，因此我们主要在一系列英文和中文基准以及一个多语言基准上评估其性能。
+我们的评估基于集成在 HAI-LLM 框架中的内部评估框架。
+所考虑的基准按如下类别列出，其中 \underline{下划线} 基准为中文基准，\uuline{双下划线} 基准为多语言基准：
 
-\textbf{Multi-subject multiple-choice} datasets include MMLU \citep{mmlu}, MMLU-Redux \citep{mmlu_redux}, MMLU-Pro \citep{mmlu_pro}, \uuline{MMMLU} \citep{mmmlu}, \underline{C-Eval} \citep{ceval}, and \underline{CMMLU} \citep{cmmlu}.
+\textbf{多学科多项选择} 数据集包括 MMLU \citep{mmlu}、MMLU-Redux \citep{mmlu_redux}、MMLU-Pro \citep{mmlu_pro}、\uuline{MMMLU} \citep{mmmlu}、\underline{C-Eval} \citep{ceval} 和 \underline{CMMLU} \citep{cmmlu}。
 
-\textbf{Language understanding and reasoning} datasets include HellaSwag \citep{hellaswag}, PIQA \citep{piqa}, ARC \citep{arc}, and BigBench Hard (BBH) \citep{bbh}.
+\textbf{语言理解与推理} 数据集包括 HellaSwag \citep{hellaswag}、PIQA \citep{piqa}、ARC \citep{arc} 和 BigBench Hard (BBH) \citep{bbh}。
 
-\textbf{Closed-book question answering} datasets include TriviaQA \citep{joshi-etal-2017-triviaqa} and NaturalQuestions \citep{naturalquestions}.
+\textbf{闭卷问答} 数据集包括 TriviaQA \citep{joshi-etal-2017-triviaqa} 和 NaturalQuestions \citep{naturalquestions}。
 
-\textbf{Reading comprehension} datasets include RACE \cite{race}, DROP \citep{drop}, \underline{C3} \citep{sun2019investigating}, and \underline{CMRC} \citep{cui-etal-2019-span}.
+\textbf{阅读理解} 数据集包括 RACE \cite{race}、DROP \citep{drop}、\underline{C3} \citep{sun2019investigating} 和 \underline{CMRC} \citep{cui-etal-2019-span}。
 
-\textbf{Reference disambiguation} datasets include \underline{CLUEWSC} \citep{clue} and WinoGrande \cite{sakaguchi2019winogrande}.
+\textbf{指代消歧} 数据集包括 \underline{CLUEWSC} \citep{clue} 和 WinoGrande \cite{sakaguchi2019winogrande}。
 
-\textbf{Language modeling} datasets include Pile \citep{pile}.
+\textbf{语言建模} 数据集包括 Pile \citep{pile}。
 
-\textbf{Chinese understanding and culture} datasets include \underline{CCPM} \citep{li2021ccpm}.
+\textbf{中文理解与文化} 数据集包括 \underline{CCPM} \citep{li2021ccpm}。
 
-\textbf{Math} datasets include GSM8K~\citep{gsm8k}, MATH~\citep{hendrycks2021measuring}, MGSM \citep{mgsm}, and \underline{CMath} \citep{wei2023cmath}.
+\textbf{数学} 数据集包括 GSM8K~\citep{gsm8k}、MATH~\citep{hendrycks2021measuring}、MGSM \citep{mgsm} 和 \underline{CMath} \citep{wei2023cmath}。
 
-\textbf{Code} datasets include HumanEval~\citep{codex}, LiveCodeBench-Base (0801-1101) \citep{livecodebench}, MBPP~\citep{mbpp}, and CRUXEval~\citep{gu2024cruxeval}.
+\textbf{代码} 数据集包括 HumanEval~\citep{codex}、LiveCodeBench-Base (0801-1101) \citep{livecodebench}、MBPP~\citep{mbpp} 和 CRUXEval~\citep{gu2024cruxeval}。
 
-\textbf{Standardized exams} include \underline{AGIEval} \citep{agieval}. 
-Note that AGIEval includes both English and Chinese subsets.
+\textbf{标准化考试} 包括 \underline{AGIEval} \citep{agieval}。
+需要说明的是，AGIEval 同时包含英文和中文子集。
 
 % [evaluation metrics: ppl, gen, bpb, etc.]
-Following our previous work~\citep{dsvi,dsvii}, we adopt perplexity-based evaluation for datasets including HellaSwag, PIQA, WinoGrande, RACE-Middle, RACE-High, MMLU, MMLU-Redux, MMLU-Pro, MMMLU, ARC-Easy, ARC-Challenge, C-Eval, CMMLU, C3, and CCPM, and adopt generation-based evaluation for TriviaQA, NaturalQuestions, DROP, MATH, GSM8K, MGSM, HumanEval, MBPP, LiveCodeBench-Base, CRUXEval, BBH, AGIEval, CLUEWSC, CMRC, and CMath. 
-In addition, we perform language-modeling-based evaluation for Pile-test and use Bits-Per-Byte~(BPB) as the metric to guarantee fair comparison among models using different tokenizers. 
+沿袭我们此前的工作~\citep{dsvi,dsvii}，我们对 HellaSwag、PIQA、WinoGrande、RACE-Middle、RACE-High、MMLU、MMLU-Redux、MMLU-Pro、MMMLU、ARC-Easy、ARC-Challenge、C-Eval、CMMLU、C3 和 CCPM 等数据集采用基于困惑度的评估，并对 TriviaQA、NaturalQuestions、DROP、MATH、GSM8K、MGSM、HumanEval、MBPP、LiveCodeBench-Base、CRUXEval、BBH、AGIEval、CLUEWSC、CMRC 和 CMath 采用基于生成的评估。
+此外，我们对 Pile-test 执行基于语言建模的评估，并使用 Bits-Per-Byte~(BPB) 作为指标，以保证使用不同 tokenizer 的模型之间公平比较。
 
 \input{tables/base_evaluation}
 
-\subsubsection{Evaluation Results}
+\subsubsection{评估结果}
 
-In Table~\ref{tab:main}, we compare the base model of \dsviii{} with the state-of-the-art open-source base models, including \dsvii{}-Base~\citep{dsvii} (our previous release), Qwen2.5 72B Base~\citep{qwen2_5}, and LLaMA-3.1 405B Base~\citep{llama3_1_405b}.
-We evaluate all these models with our internal evaluation framework, and ensure that they share the same evaluation setting. 
-Note that due to the changes in our evaluation framework over the past months, the performance of \dsvii{}-Base exhibits a slight difference from our previously reported results.
-Overall, \dsviii{}-Base comprehensively outperforms \dsvii{}-Base and Qwen2.5 72B Base, and surpasses LLaMA-3.1 405B Base in the majority of benchmarks, essentially becoming the strongest open-source model.  
+在表~\ref{tab:main} 中，我们将 \dsviii{} 基础模型与 state-of-the-art 开源基础模型进行比较，包括 \dsvii{}-Base~\citep{dsvii}，我们的前一版本，Qwen2.5 72B Base~\citep{qwen2_5} 和 LLaMA-3.1 405B Base~\citep{llama3_1_405b}。
+我们使用内部评估框架评估所有这些模型，并确保它们采用相同的评估设置。
+需要说明的是，由于过去几个月中评估框架发生变化，\dsvii{}-Base 的性能与我们此前报告的结果略有差异。
+总体而言，\dsviii{}-Base 全面优于 \dsvii{}-Base 和 Qwen2.5 72B Base，并在多数基准上超过 LLaMA-3.1 405B Base，基本成为最强开源模型。
 
-From a more detailed perspective, we compare \dsviii{}-Base with the other open-source base models individually.
-(1) 
-Compared with \dsvii{}-Base, due to the improvements in our model architecture, the scale-up of the model size and training tokens, and the enhancement of data quality, \dsviii{}-Base achieves significantly better performance as expected.
+从更细粒度视角看，我们分别将 \dsviii{}-Base 与其他开源基础模型进行比较。
+(1)
+相较 \dsvii{}-Base，得益于模型架构改进、模型规模和训练 token 扩大，以及数据质量提升，\dsviii{}-Base 如预期取得显著更好的性能。
 (2)
-Compared with Qwen2.5 72B Base, the state-of-the-art Chinese open-source model, with only half of the activated parameters, \dsviii{}-Base also demonstrates remarkable advantages, especially on English, multilingual, code, and math benchmarks. 
-As for Chinese benchmarks, except for CMMLU, a Chinese multi-subject multiple-choice task, \dsviii{}-Base also shows better performance than Qwen2.5 72B. 
+相较 state-of-the-art 中文开源模型 Qwen2.5 72B Base，\dsviii{}-Base 仅使用一半激活参数，却同样展现出显著优势，尤其是在英文、多语言、代码和数学基准上。
+至于中文基准，除 CMMLU 这一中文多学科多项选择任务外，\dsviii{}-Base 也展现出优于 Qwen2.5 72B 的性能。
 (3)
-Compared with LLaMA-3.1 405B Base, the largest open-source model with 11 times the activated parameters, \dsviii{}-Base also exhibits much better performance on multilingual, code, and math benchmarks. 
-As for English and Chinese language benchmarks, \dsviii{}-Base shows competitive or better performance, and is especially good on BBH, MMLU-series, DROP, C-Eval, CMMLU, and CCPM. 
+相较拥有 11 倍激活参数的最大开源模型 LLaMA-3.1 405B Base，\dsviii{}-Base 在多语言、代码和数学基准上也表现得好得多。
+对于英文和中文语言基准，\dsviii{}-Base 展现出有竞争力或更好的性能，并且在 BBH、MMLU-series、DROP、C-Eval、CMMLU 和 CCPM 上尤其突出。
 
-Due to our efficient architectures and comprehensive engineering optimizations, \dsviii{} achieves extremely high training efficiency. 
-Under our training framework and infrastructures, training \dsviii{} on each trillion tokens requires only 180K H800 GPU hours, which is much cheaper than training 72B or 405B dense models. 
+得益于高效架构和全面工程优化，\dsviii{} 实现了极高训练效率。
+在我们的训练框架和基础设施下，每训练 \dsviii{} 一万亿 token 仅需 180K H800 GPU 小时，远低于训练 72B 或 405B dense 模型的成本。
 
 \begin{table}[ht]
     \centering
@@ -858,36 +858,36 @@ Under our training framework and infrastructures, training \dsviii{} on each tri
     \bottomrule
     \end{tabular}
     \caption{
-    Ablation results for the MTP strategy. 
-    The MTP strategy consistently enhances the model performance on most of the evaluation benchmarks.
+    MTP 策略的消融结果。
+    MTP 策略在大多数评估基准上一贯提升模型性能。
     }
     \label{tab:ablation_nextn}
 \end{table}
 
-\subsection{Discussion}
+\subsection{讨论}
 
-\subsubsection{Ablation Studies for Multi-Token Prediction}
+\subsubsection{Multi-Token Prediction 的消融研究}
 \label{discussion:ablation_nextn}
 
-In Table~\ref{tab:ablation_nextn}, we show the ablation results for the MTP strategy. 
-To be specific, we validate the MTP strategy on top of two baseline models across different scales. 
-At the small scale, we train a baseline MoE model comprising 15.7B total parameters on 1.33T tokens. 
-At the large scale, we train a baseline MoE model comprising 228.7B total parameters on 540B tokens. 
-On top of them, keeping the training data and the other architectures the same, we append a 1-depth MTP module onto them and train two models with the MTP strategy for comparison. 
-Note that during inference, we directly discard the MTP module, so the inference costs of the compared models are exactly the same. 
-From the table, we can observe that the MTP strategy consistently enhances the model performance on most of the evaluation benchmarks. 
+在表~\ref{tab:ablation_nextn} 中，我们展示了 MTP 策略的消融结果。
+具体而言，我们在两个不同规模的基线模型上验证 MTP 策略。
+在小规模设置中，我们在 1.33T 个 token 上训练一个总参数量为 15.7B 的基线 MoE 模型。
+在大规模设置中，我们在 540B 个 token 上训练一个总参数量为 228.7B 的基线 MoE 模型。
+在它们之上，我们保持训练数据和其他架构不变，附加一个深度为 1 的 MTP 模块，并训练两个采用 MTP 策略的模型进行比较。
+注意，在推理期间，我们直接丢弃 MTP 模块，因此被比较模型的推理成本完全相同。
+从表中可以观察到，MTP 策略在大多数评估基准上一贯提升模型性能。
 
-\subsubsection{Ablation Studies for the Auxiliary-Loss-Free Balancing Strategy}
+\subsubsection{Auxiliary-Loss-Free 均衡策略的消融研究}
 \label{discussion:ablation_noaux_tc}
 
-In Table~\ref{tab:ablation_noaux_tc}, we show the ablation results for the auxiliary-loss-free balancing strategy.
-We validate this strategy on top of two baseline models across different scales. 
-At the small scale, we train a baseline MoE model comprising 15.7B total parameters on 1.33T tokens. 
-At the large scale, we train a baseline MoE model comprising 228.7B total parameters on 578B tokens. 
-Both of the baseline models purely use auxiliary losses to encourage load balance, and use the sigmoid gating function with top-K affinity normalization. 
-Their hyper-parameters to control the strength of auxiliary losses are the same as \dsvii{}-Lite and \dsvii{}, respectively. 
-On top of these two baseline models, keeping the training data and the other architectures the same, we remove all auxiliary losses and introduce the auxiliary-loss-free balancing strategy for comparison. 
-From the table, we can observe that the auxiliary-loss-free strategy consistently achieves better model performance on most of the evaluation benchmarks. 
+在表~\ref{tab:ablation_noaux_tc} 中，我们展示了 auxiliary-loss-free 均衡策略的消融结果。
+我们在两个不同规模的基线模型上验证该策略。
+在小规模设置中，我们在 1.33T 个 token 上训练一个总参数量为 15.7B 的基线 MoE 模型。
+在大规模设置中，我们在 578B 个 token 上训练一个总参数量为 228.7B 的基线 MoE 模型。
+两个基线模型都仅使用辅助损失鼓励负载均衡，并使用带 top-K 亲和度归一化的 sigmoid gating 函数。
+它们用于控制辅助损失强度的超参数分别与 \dsvii{}-Lite 和 \dsvii{} 相同。
+在这两个基线模型之上，我们保持训练数据和其他架构不变，移除所有辅助损失并引入 auxiliary-loss-free 均衡策略进行比较。
+从表中可以观察到，auxiliary-loss-free 策略在大多数评估基准上一贯取得更好的模型性能。
 
 \begin{table}[t]
     \centering
@@ -915,98 +915,98 @@ From the table, we can observe that the auxiliary-loss-free strategy consistentl
     \bottomrule
     \end{tabular}
     \caption{
-    Ablation results for the auxiliary-loss-free balancing strategy. 
-    Compared with the purely auxiliary-loss-based method, the auxiliary-loss-free strategy consistently achieves better model performance on most of the evaluation benchmarks.
+    Auxiliary-loss-free 均衡策略的消融结果。
+    与纯 auxiliary-loss-based 方法相比，auxiliary-loss-free 策略在大多数评估基准上一贯取得更好的模型性能。
     }
     \label{tab:ablation_noaux_tc}
 \end{table}
 
-\subsubsection{Batch-Wise Load Balance VS. Sequence-Wise Load Balance}
+\subsubsection{Batch-Wise 负载均衡与 Sequence-Wise 负载均衡}
 \label{discussion:balance}
 
-The key distinction between auxiliary-loss-free balancing and sequence-wise auxiliary loss lies in their balancing scope: batch-wise versus sequence-wise. 
-Compared with the sequence-wise auxiliary loss, batch-wise balancing imposes a more flexible constraint, as it does not enforce in-domain balance on each sequence. 
-This flexibility allows experts to better specialize in different domains. 
-To validate this, we record and analyze the expert load of a 16B auxiliary-loss-based baseline and a 16B auxiliary-loss-free model on different domains in the Pile test set.
-As illustrated in Figure~\ref{fig:expert_load}, we observe that the auxiliary-loss-free model demonstrates greater expert specialization patterns as expected. 
+Auxiliary-loss-free 均衡与 sequence-wise 辅助损失的关键区别在于均衡范围：batch-wise 与 sequence-wise。
+与 sequence-wise 辅助损失相比，batch-wise 均衡施加了更灵活的约束，因为它并不强制每个序列内部保持均衡。
+这种灵活性使专家能够更好地专门化于不同领域。
+为验证这一点，我们记录并分析了一个 16B auxiliary-loss-based 基线和一个 16B auxiliary-loss-free 模型在 Pile 测试集不同领域上的专家负载。
+如图~\ref{fig:expert_load} 所示，我们观察到 auxiliary-loss-free 模型如预期展现出更强的专家专门化模式。
 
-To further investigate the correlation between this flexibility and the advantage in model performance, we additionally design and validate a batch-wise auxiliary loss that encourages load balance on each training batch instead of on each sequence. 
-The experimental results show that, when achieving a similar level of batch-wise load balance, the batch-wise auxiliary loss can also achieve similar model performance to the auxiliary-loss-free method.
-To be specific, in our experiments with 1B MoE models, the validation losses are: 2.258 (using a sequence-wise auxiliary loss), 2.253 (using the auxiliary-loss-free method), and 2.253 (using a batch-wise auxiliary loss). 
-We also observe similar results on 3B MoE models: the model using a sequence-wise auxiliary loss achieves a validation loss of 2.085, and the models using the auxiliary-loss-free method or a batch-wise auxiliary loss achieve the same validation loss of 2.080.
+为进一步研究这种灵活性与模型性能优势之间的相关性，我们额外设计并验证了一种 batch-wise 辅助损失，它鼓励每个训练 batch 上的负载均衡，而非每个序列上的负载均衡。
+实验结果表明，当达到相似程度的 batch-wise 负载均衡时，batch-wise 辅助损失也能取得与 auxiliary-loss-free 方法相近的模型性能。
+具体而言，在我们的 1B MoE 模型实验中，验证损失分别为：2.258，使用 sequence-wise 辅助损失；2.253，使用 auxiliary-loss-free 方法；以及 2.253，使用 batch-wise 辅助损失。
+我们在 3B MoE 模型上也观察到类似结果：使用 sequence-wise 辅助损失的模型验证损失为 2.085，而使用 auxiliary-loss-free 方法或 batch-wise 辅助损失的模型验证损失均为 2.080。
 
-In addition, although the batch-wise load balancing methods show consistent performance advantages, they also face two potential challenges in efficiency: 
-(1) load imbalance within certain sequences or small batches, and 
-(2) domain-shift-induced load imbalance during inference. 
-The first challenge is naturally addressed by our training framework that uses large-scale expert parallelism and data parallelism, which guarantees a large size of each micro-batch. 
-For the second challenge, we also design and implement an efficient inference framework with redundant expert deployment, as described in Section \ref{sec:inference_deployment}, to overcome it.
+此外，尽管 batch-wise 负载均衡方法展现出一致的性能优势，它们也面临两个潜在效率挑战：
+(1) 某些序列或小 batch 内的负载不均衡；
+(2) 推理期间由 domain-shift 引发的负载不均衡。
+第一个挑战由我们的训练框架自然解决，该框架使用大规模 expert parallelism 和 data parallelism，保证每个 micro-batch 具有较大规模。
+对于第二个挑战，我们也设计并实现了带冗余专家部署的高效推理框架，如 Section \ref{sec:inference_deployment} 所述，以克服该问题。
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=0.99\linewidth]{figures/relative_expert_load_multi.pdf}
 \caption{
-    Expert load of auxiliary-loss-free and auxiliary-loss-based models on three domains in the Pile test set. 
-    The auxiliary-loss-free model shows greater expert specialization patterns than the auxiliary-loss-based one.
-    The relative expert load denotes the ratio between the actual expert load and the theoretically balanced expert load. 
-    Due to space constraints, we only present the results of two layers as an example, with the results of all layers provided in Appendix~\ref{app:detailed_expert_load}.
+    Auxiliary-loss-free 和 auxiliary-loss-based 模型在 Pile 测试集三个领域上的专家负载。
+    Auxiliary-loss-free 模型比 auxiliary-loss-based 模型展现出更强的专家专门化模式。
+    相对专家负载表示实际专家负载与理论均衡专家负载之间的比值。
+    由于空间限制，我们仅展示两层结果作为示例，所有层的结果见附录~\ref{app:detailed_expert_load}。
 }
 \label{fig:expert_load}
 \end{figure}
 
-\section{Post-Training}
+\section{后训练}
 \label{sec:alignment}
 
 \subsection{Supervised Fine-Tuning}
 
-We curate our instruction-tuning datasets to include 1.5M instances spanning multiple domains, with each domain employing distinct data creation methods tailored to its specific requirements.
+我们整理了包含 1.5M 个样本的指令微调数据集，覆盖多个领域，并为每个领域采用契合其特定需求的不同数据创建方法。
 
-\paragraph{Reasoning Data.} 
-For reasoning-related datasets, including those focused on mathematics, code competition problems, and logic puzzles, we generate the data by leveraging an internal DeepSeek-R1 model. 
-Specifically, while the R1-generated data demonstrates strong accuracy, it suffers from issues such as overthinking, poor formatting, and excessive length. 
-Our objective is to balance the high accuracy of R1-generated reasoning data and the clarity and conciseness of regularly formatted reasoning data.
+\paragraph{推理数据。}
+对于推理相关数据集，包括聚焦数学、代码竞赛题和逻辑谜题的数据集，我们使用内部 DeepSeek-R1 模型生成数据。
+具体而言，尽管 R1 生成的数据展现出很高准确率，但存在过度思考、格式欠佳和长度过长等问题。
+我们的目标是在 R1 生成推理数据的高准确率与常规格式推理数据的清晰简洁之间取得平衡。
 
-To establish our methodology, we begin by developing an expert model tailored to a specific domain, such as code, mathematics, or general reasoning, using a combined Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL) training pipeline. 
-This expert model serves as a data generator for the final model. 
-The training process involves generating two distinct types of SFT samples for each instance: the first couples the problem with its original response in the format of <problem, original response>, while the second incorporates a system prompt alongside the problem and the R1 response in the format of <system prompt, problem, R1 response>.
+为建立我们的方法，我们首先使用结合 Supervised Fine-Tuning (SFT) 与 Reinforcement Learning (RL) 的训练流水线，开发针对特定领域的专家模型，例如代码、数学或通用推理。
+该专家模型作为最终模型的数据生成器。
+训练过程会为每个样本生成两种不同类型的 SFT 样本：第一种将问题与其原始回答配对，格式为 <problem, original response>；第二种在问题和 R1 回答之外加入 system prompt，格式为 <system prompt, problem, R1 response>。
 
-The system prompt is meticulously designed to include instructions that guide the model toward producing responses enriched with mechanisms for reflection and verification. 
-During the RL phase, the model leverages high-temperature sampling to generate responses that integrate patterns from both the R1-generated and original data, even in the absence of explicit system prompts. 
-After hundreds of RL steps, the intermediate RL model learns to incorporate R1 patterns, thereby enhancing overall performance strategically.
+System prompt 经过精心设计，包含指导模型生成带有反思和验证机制回答的指令。
+在 RL 阶段，即便没有显式 system prompt，模型也会利用高 temperature 采样生成融合 R1 生成数据与原始数据模式的回答。
+经过数百个 RL step 后，中间 RL 模型学会融入 R1 模式，从而有策略地提升整体性能。
 
-Upon completing the RL training phase, we implement rejection sampling to curate high-quality SFT data for the final model, where the expert models are used as data generation sources. 
-This method ensures that the final training data retains the strengths of DeepSeek-R1 while producing responses that are concise and effective.
+完成 RL 训练阶段后，我们执行 rejection sampling，为最终模型筛选高质量 SFT 数据，其中专家模型被用作数据生成来源。
+该方法确保最终训练数据保留 DeepSeek-R1 的优势，同时生成简洁有效的回答。
 
-\paragraph{Non-Reasoning Data.} 
-For non-reasoning data, such as creative writing, role-play, and simple question answering, we utilize DeepSeek-V2.5 to generate responses and enlist human annotators to verify the accuracy and correctness of the data.
+\paragraph{非推理数据。}
+对于非推理数据，例如创意写作、角色扮演和简单问答，我们使用 DeepSeek-V2.5 生成回答，并邀请人工标注员验证数据的准确性和正确性。
 
-\paragraph{SFT Settings.} 
-We fine-tune \dsviii{}-Base for two epochs using the SFT dataset, using the cosine decay learning rate scheduling that starts at $5 \times 10^{-6}$ and gradually decreases to $1 \times 10^{-6}$. 
-During training, each single sequence is packed from multiple samples. 
-However, we adopt a sample masking strategy to ensure that these examples remain isolated and mutually invisible.
+\paragraph{SFT 设置。}
+我们使用 SFT 数据集对 \dsviii{}-Base 微调两个 epoch，并采用从 $5 \times 10^{-6}$ 开始、逐渐下降到 $1 \times 10^{-6}$ 的余弦衰减学习率调度。
+训练期间，每个单独序列由多个样本打包而成。
+不过，我们采用样本掩码策略，确保这些样本彼此隔离且相互不可见。
 
-\subsection{Reinforcement Learning}
+\subsection{强化学习}
 
-\subsubsection{Reward Model}
+\subsubsection{奖励模型}
 
-We employ a rule-based Reward Model (RM) and a model-based RM in our RL process.
+我们在 RL 过程中使用 rule-based Reward Model (RM) 和 model-based RM。
 
-\paragraph{Rule-Based RM.} 
-For questions that can be validated using specific rules, we adopt a rule-based reward system to determine the feedback. 
-For instance, certain math problems have deterministic results, and we require the model to provide the final answer within a designated format (e.g., in a box), allowing us to apply rules to verify the correctness. 
-Similarly, for LeetCode problems, we can utilize a compiler to generate feedback based on test cases. 
-By leveraging rule-based validation wherever possible, we ensure a higher level of reliability, as this approach is resistant to manipulation or exploitation.
+\paragraph{Rule-Based RM。}
+对于可使用特定规则验证的问题，我们采用 rule-based 奖励系统来确定反馈。
+例如，某些数学问题具有确定性结果，我们要求模型以指定格式，例如放在方框中，给出最终答案，使我们可以应用规则验证正确性。
+类似地，对于 LeetCode 问题，我们可以使用编译器基于测试用例生成反馈。
+通过尽可能使用 rule-based 验证，我们确保了更高可靠性，因为这种方法不易被操纵或利用。
 
-\paragraph{Model-Based RM.} 
-For questions with free-form ground-truth answers, we rely on the reward model to determine whether the response matches the expected ground-truth. 
-Conversely, for questions without a definitive ground-truth, such as those involving creative writing, the reward model is tasked with providing feedback based on the question and the corresponding answer as inputs. 
-The reward model is trained from the \dsviii{} SFT checkpoints. 
-To enhance its reliability, we construct preference data that not only provides the final reward but also includes the chain-of-thought leading to the reward. 
-This approach helps mitigate the risk of reward hacking in specific tasks.
+\paragraph{Model-Based RM。}
+对于具有自由形式 ground-truth 答案的问题，我们依赖 reward model 判断回答是否匹配期望的 ground-truth。
+相反，对于没有确定 ground-truth 的问题，例如涉及创意写作的问题，reward model 的任务是基于问题及其对应答案作为输入提供反馈。
+Reward model 从 \dsviii{} SFT checkpoints 训练而来。
+为增强其可靠性，我们构造偏好数据，不仅提供最终 reward，还包含导向该 reward 的 chain-of-thought。
+该方法有助于缓解特定任务中的 reward hacking 风险。
 
-\subsubsection{Group Relative Policy Optimization}
+\subsubsection{组相对策略优化}
 
-Similar to \dsvii{}~\citep{dsvii}, we adopt Group Relative Policy Optimization~(GRPO)~\citep{deepseekmath}, which foregoes the critic model that is typically with the same size as the policy model, and estimates the baseline from group scores instead. 
-Specifically, for each question $q$, GRPO samples a group of outputs $\{o_1, o_2, \cdots, o_G\}$ from the old policy model $\pi_{\theta_{old}}$ and then optimizes the policy model $\pi_{\theta}$ by maximizing the following objective:
+与 \dsvii{}~\citep{dsvii} 类似，我们采用 Group Relative Policy Optimization~(GRPO)~\citep{deepseekmath}，它省去了通常与 policy model 同规模的 critic model，转而从组内分数估计 baseline。
+具体而言，对于每个问题 $q$，GRPO 从旧 policy model $\pi_{\theta_{old}}$ 采样一组输出 $\{o_1, o_2, \cdots, o_G\}$，然后通过最大化以下目标优化 policy model $\pi_{\theta}$：
 \begin{equation}
 \begin{split}
     \mathcal{J}_{GRPO}(\theta) &= \mathbb{E}{[q \sim P(Q), \{o_i\}_{i=1}^G \sim \pi_{\theta_{old}}(O|q)]}  \\
@@ -1017,80 +1017,80 @@ Specifically, for each question $q$, GRPO samples a group of outputs $\{o_1, o_2
 \begin{equation}
     \mathbb{D}_{KL}\left(\pi_{\theta} || \pi_{ref}\right) = \frac{\pi_{ref}(o_i|q)}{\pi_{\theta}(o_i|q)}- \log\frac{\pi_{ref}(o_i|q)}{\pi_{\theta}(o_i|q)} - 1,
 \end{equation}
-where $\epsilon$ and $\beta$ are hyper-parameters; 
-$\pi_{ref}$ is the reference model; 
-and $A_i$ is the advantage, derived from the rewards $\{r_1, r_2, \ldots, r_G\}$ corresponding to the outputs within each group:
+其中 $\epsilon$ 和 $\beta$ 是超参数；
+$\pi_{ref}$ 是参考模型；
+$A_i$ 是 advantage，由每组内输出对应的 rewards $\{r_1, r_2, \ldots, r_G\}$ 得到：
 \begin{equation}
     A_i = \frac{r_i - {\operatorname{mean}(\{r_1, r_2, \cdots, r_G\})}}{{\operatorname{std}(\{r_1, r_2, \cdots, r_G\})}}.
 \end{equation}
 
-We incorporate prompts from diverse domains, such as coding, math, writing, role-playing, and question answering, during the RL process. 
-This approach not only aligns the model more closely with human preferences but also enhances performance on benchmarks, especially in scenarios where available SFT data are limited.
+在 RL 过程中，我们纳入来自多样领域的 prompt，例如代码、数学、写作、角色扮演和问答。
+该方法不仅使模型更贴近人类偏好，还提升了基准性能，尤其是在可用 SFT 数据有限的场景中。
 
-\subsection{Evaluations}
+\subsection{评估}
 
-\subsubsection{Evaluation Settings}
+\subsubsection{评估设置}
 
-\paragraph{Evaluation Benchmarks.}
-Apart from the benchmark we used for base model testing, we further evaluate instructed models on IFEval~\citep{IFeval}, FRAMES~\citep{frames}, LongBench v2~\citep{bai2024longbench2}, GPQA~\citep{gpqa}, SimpleQA~\citep{simpleqa}, C-SimpleQA~\citep{csimpleqa}, SWE-Bench Verified~\citep{swe_verified}, Aider~\footnote{\url{https://aider.chat}}, LiveCodeBench~\citep{livecodebench} (questions from August 2024 to November 2024), Codeforces~\footnote{\url{https://codeforces.com}}, Chinese National High School Mathematics Olympiad (CNMO 2024)\footnote{\url{https://www.cms.org.cn/Home/comp/comp/cid/12.html}}, and American Invitational Mathematics Examination 2024 (AIME 2024)~\citep{AIME2024}. 
+\paragraph{评估基准。}
+除用于基础模型测试的基准外，我们进一步在 IFEval~\citep{IFeval}、FRAMES~\citep{frames}、LongBench v2~\citep{bai2024longbench2}、GPQA~\citep{gpqa}、SimpleQA~\citep{simpleqa}、C-SimpleQA~\citep{csimpleqa}、SWE-Bench Verified~\citep{swe_verified}、Aider~\footnote{\url{https://aider.chat}}、LiveCodeBench~\citep{livecodebench}，题目来自 2024 年 8 月至 2024 年 11 月，Codeforces~\footnote{\url{https://codeforces.com}}、Chinese National High School Mathematics Olympiad (CNMO 2024)\footnote{\url{https://www.cms.org.cn/Home/comp/comp/cid/12.html}} 和 American Invitational Mathematics Examination 2024 (AIME 2024)~\citep{AIME2024} 上评估指令模型。
 
-\paragraph{Compared Baselines.}
-We conduct comprehensive evaluations of our chat model against several strong baselines, including \dsvii{}-0506, DeepSeek-V2.5-0905, Qwen2.5 72B Instruct, LLaMA-3.1 405B Instruct, Claude-Sonnet-3.5-1022, and GPT-4o-0513. 
-For the \dsvii{} model series, we select the most representative variants for comparison. 
-For closed-source models, evaluations are performed through their respective APIs.
+\paragraph{对比基线。}
+我们将聊天模型与若干强基线进行全面评估，包括 \dsvii{}-0506、DeepSeek-V2.5-0905、Qwen2.5 72B Instruct、LLaMA-3.1 405B Instruct、Claude-Sonnet-3.5-1022 和 GPT-4o-0513。
+对于 \dsvii{} 模型系列，我们选择最具代表性的变体进行比较。
+对于闭源模型，评估通过其各自 API 执行。
 
-\paragraph{Detailed Evaluation Configurations.}
-For standard benchmarks including MMLU, DROP, GPQA, and SimpleQA, we adopt the evaluation prompts from the simple-evals framework\footnote{\url{https://github.com/openai/simple-evals}}. 
-We utilize the Zero-Eval prompt format~\citep{Lin_ZeroEval_A_Unified_2024} for MMLU-Redux in a zero-shot setting. 
-For other datasets, we follow their original evaluation protocols with default prompts as provided by the dataset creators.
-For code and math benchmarks, the HumanEval-Mul dataset includes 8 mainstream programming languages (Python, Java, Cpp, C\#, JavaScript, TypeScript, PHP, and Bash) in total. 
-We use CoT and non-CoT methods to evaluate model performance on LiveCodeBench, where the data are collected from August 2024 to November 2024. 
-The Codeforces dataset is measured using the percentage of competitors. 
-SWE-Bench verified is evaluated using the agentless framework~\citep{agentless}. 
-We use the ``diff'' format to evaluate the Aider-related benchmarks. 
-For mathematical assessments, AIME and CNMO 2024 are evaluated with a temperature of 0.7, and the results are averaged over 16 runs, while MATH-500 employs greedy decoding. 
-We allow all models to output a maximum of 8192 tokens for each benchmark. 
+\paragraph{详细评估配置。}
+对于 MMLU、DROP、GPQA 和 SimpleQA 等标准基准，我们采用 simple-evals 框架中的评估 prompt\footnote{\url{https://github.com/openai/simple-evals}}。
+我们在 zero-shot 设置下对 MMLU-Redux 使用 Zero-Eval prompt 格式~\citep{Lin_ZeroEval_A_Unified_2024}。
+对于其他数据集，我们遵循其原始评估协议，并使用数据集创建者提供的默认 prompt。
+对于代码和数学基准，HumanEval-Mul 数据集总共包含 8 种主流编程语言，Python、Java、Cpp、C\#、JavaScript、TypeScript、PHP 和 Bash。
+我们使用 CoT 和非 CoT 方法在 LiveCodeBench 上评估模型性能，其中数据收集自 2024 年 8 月至 2024 年 11 月。
+Codeforces 数据集使用参赛者百分位进行衡量。
+SWE-Bench verified 使用 agentless 框架~\citep{agentless} 评估。
+我们使用 ``diff'' 格式评估 Aider 相关基准。
+对于数学评估，AIME 和 CNMO 2024 使用 temperature 0.7 进行评估，结果取 16 次运行的平均值，而 MATH-500 使用 greedy decoding。
+我们允许所有模型在每个基准上最多输出 8192 个 token。
 
 \input{tables/chat_evaluation}
 
-\subsubsection{Standard Evaluation}
+\subsubsection{标准评估}
 
-Table~\ref{tab:chat} presents the evaluation results, showcasing that \dsviii{} stands as the best-performing open-source model. 
-Additionally, it is competitive against frontier closed-source models like GPT-4o and Claude-3.5-Sonnet. 
+表~\ref{tab:chat} 给出了评估结果，表明 \dsviii{} 是性能最佳的开源模型。
+此外，它相较 GPT-4o 和 Claude-3.5-Sonnet 等前沿闭源模型也具有竞争力。
 
-\paragraph{English Benchmarks.}
-MMLU is a widely recognized benchmark designed to assess the performance of large language models, across diverse knowledge domains and tasks. 
-\dsviii{} demonstrates competitive performance, standing on par with top-tier models such as LLaMA-3.1-405B, GPT-4o, and Claude-Sonnet 3.5, while significantly outperforming Qwen2.5 72B. 
-Moreover, \dsviii{} excels in MMLU-Pro, a more challenging educational knowledge benchmark, where it closely trails Claude-Sonnet 3.5. 
-On MMLU-Redux, a refined version of MMLU with corrected labels, \dsviii{} surpasses its peers. 
-In addition, on GPQA-Diamond, a PhD-level evaluation testbed, \dsviii{} achieves remarkable results, ranking just behind Claude 3.5 Sonnet and outperforming all other competitors by a substantial margin.
+\paragraph{英文基准。}
+MMLU 是一个广受认可的基准，用于评估大语言模型在多样知识领域和任务上的性能。
+\dsviii{} 展现出有竞争力的性能，与 LLaMA-3.1-405B、GPT-4o 和 Claude-Sonnet 3.5 等顶级模型处于同一水平，同时显著优于 Qwen2.5 72B。
+此外，\dsviii{} 在更具挑战性的教育知识基准 MMLU-Pro 上表现出色，紧随 Claude-Sonnet 3.5。
+在带有修正标签的 MMLU 改进版本 MMLU-Redux 上，\dsviii{} 超过了同类模型。
+此外，在博士级评估测试平台 GPQA-Diamond 上，\dsviii{} 取得了显著成绩，仅次于 Claude 3.5 Sonnet，并以较大幅度超过所有其他竞争者。
 
-In long-context understanding benchmarks such as DROP, LongBench v2, and FRAMES, \dsviii{} continues to demonstrate its position as a top-tier model. 
-It achieves an impressive 91.6 F1 score in the 3-shot setting on DROP, outperforming all other models in this category. 
-On FRAMES, a benchmark requiring question-answering over 100k token contexts, \dsviii{} closely trails GPT-4o while outperforming all other models by a significant margin. 
-This demonstrates the strong capability of \dsviii{} in handling extremely long-context tasks. 
-The long-context capability of \dsviii{} is further validated by its best-in-class performance on LongBench v2, a dataset that was released just a few weeks before the launch of DeepSeek V3. 
-On the factual knowledge benchmark, SimpleQA, \dsviii{} falls behind GPT-4o and Claude-Sonnet, primarily due to its design focus and resource allocation. 
-\dsviii{} assigns more training tokens to learn Chinese knowledge, leading to exceptional performance on the C-SimpleQA. 
-On the instruction-following benchmark, \dsviii{} significantly outperforms its predecessor, \dsvii{}-series, highlighting its improved ability to understand and adhere to user-defined format constraints.
+在 DROP、LongBench v2 和 FRAMES 等长上下文理解基准上，\dsviii{} 继续展现其顶级模型地位。
+它在 DROP 的 3-shot 设置中取得了令人印象深刻的 91.6 F1 分数，超过该类别中的所有其他模型。
+在 FRAMES 这一要求对 100k token 上下文进行问答的基准上，\dsviii{} 紧随 GPT-4o，同时以显著幅度超过所有其他模型。
+这展示了 \dsviii{} 处理超长上下文任务的强大能力。
+\dsviii{} 的长上下文能力还通过其在 LongBench v2 上同类最佳的性能得到进一步验证，该数据集在 DeepSeek V3 发布前数周才发布。
+在事实知识基准 SimpleQA 上，\dsviii{} 落后于 GPT-4o 和 Claude-Sonnet，主要原因是其设计重点和资源分配。
+\dsviii{} 分配了更多训练 token 来学习中文知识，因此在 C-SimpleQA 上取得了出色性能。
+在指令遵循基准上，\dsviii{} 显著优于其前身 \dsvii{} 系列，凸显其理解并遵循用户定义格式约束能力的提升。
 
-\paragraph{Code and Math Benchmarks.}
-Coding is a challenging and practical task for LLMs, encompassing engineering-focused tasks like SWE-Bench-Verified and Aider, as well as algorithmic tasks such as HumanEval and LiveCodeBench. 
-In engineering tasks, \dsviii{} trails behind Claude-Sonnet-3.5-1022 but significantly outperforms open-source models. 
-The open-source \dsviii{} is expected to foster advancements in coding-related engineering tasks. 
-By providing access to its robust capabilities, \dsviii{} can drive innovation and improvement in areas such as software engineering and algorithm development, empowering developers and researchers to push the boundaries of what open-source models can achieve in coding tasks. 
-In algorithmic tasks, \dsviii{} demonstrates superior performance, outperforming all baselines on benchmarks like HumanEval-Mul and LiveCodeBench. 
-This success can be attributed to its advanced knowledge distillation technique, which effectively enhances its code generation and problem-solving capabilities in algorithm-focused tasks.
+\paragraph{代码和数学基准。}
+编程对 LLM 来说是一项具有挑战且实用的任务，既包括 SWE-Bench-Verified 和 Aider 等面向工程的任务，也包括 HumanEval 和 LiveCodeBench 等算法任务。
+在工程任务中，\dsviii{} 落后于 Claude-Sonnet-3.5-1022，但显著优于开源模型。
+开源的 \dsviii{} 有望推动代码相关工程任务的进步。
+通过开放其强大能力，\dsviii{} 可以推动软件工程和算法开发等领域的创新与改进，使开发者和研究者能够拓展开源模型在编程任务中可达到的边界。
+在算法任务中，\dsviii{} 展现出卓越性能，在 HumanEval-Mul 和 LiveCodeBench 等基准上超过所有基线。
+这一成功可归因于其先进的知识蒸馏技术，该技术有效增强了其在算法型任务中的代码生成和问题求解能力。
 
-On math benchmarks, \dsviii{} demonstrates exceptional performance, significantly surpassing baselines and setting a new state-of-the-art for non-o1-like models. 
-Specifically, on AIME, MATH-500, and CNMO 2024, \dsviii{} outperforms the second-best model, Qwen2.5 72B, by approximately 10\% in absolute scores, which is a substantial margin for such challenging benchmarks.
-This remarkable capability highlights the effectiveness of the distillation technique from DeepSeek-R1, which has been proven highly beneficial for non-o1-like models.
+在数学基准上，\dsviii{} 展现出卓越性能，显著超过基线，并为非 o1-like 模型建立了新的 state-of-the-art。
+具体而言，在 AIME、MATH-500 和 CNMO 2024 上，\dsviii{} 在绝对分数上比第二好的模型 Qwen2.5 72B 高约 10\%，对于这些高难度基准而言，这是很大的优势。
+这一显著能力凸显了来自 DeepSeek-R1 的蒸馏技术的有效性，该技术已被证明对非 o1-like 模型非常有益。
 
-\paragraph{Chinese Benchmarks.}
-Qwen and DeepSeek are two representative model series with robust support for both Chinese and English. 
-On the factual benchmark Chinese SimpleQA, \dsviii{} surpasses Qwen2.5-72B by 16.4 points, despite Qwen2.5 being trained on a larger corpus compromising 18T tokens, which are 20\% more than the 14.8T tokens that \dsviii{} is pre-trained on.
+\paragraph{中文基准。}
+Qwen 和 DeepSeek 是两个对中文和英文均有强支持的代表性模型系列。
+在事实基准 Chinese SimpleQA 上，\dsviii{} 超过 Qwen2.5-72B 16.4 分，尽管 Qwen2.5 在更大的 18T token 语料上训练，比 \dsviii{} 预训练使用的 14.8T token 多 20\%。
 
-On C-Eval, a representative benchmark for Chinese educational knowledge evaluation, and CLUEWSC (Chinese Winograd Schema Challenge), \dsviii{} and Qwen2.5-72B exhibit similar performance levels, indicating that both models are well-optimized for challenging Chinese-language reasoning and educational tasks.
+在中文教育知识评估代表性基准 C-Eval 和 CLUEWSC (Chinese Winograd Schema Challenge) 上，\dsviii{} 与 Qwen2.5-72B 展现出相近的性能水平，表明两个模型都针对具有挑战性的中文推理和教育任务进行了良好优化。
 
 \begin{table}[t]
     \centering
@@ -1107,32 +1107,32 @@ On C-Eval, a representative benchmark for Chinese educational knowledge evaluati
     \bottomrule
     \end{tabular}
     \caption{
-    English open-ended conversation evaluations. 
-    For AlpacaEval 2.0, we use the length-controlled win rate as the metric. 
+    英文开放式对话评估。
+    对于 AlpacaEval 2.0，我们使用长度控制胜率作为指标。
     }
     \label{tab:open} 
 \end{table}
 
-\subsubsection{Open-Ended Evaluation}
+\subsubsection{开放式评估}
 
-In addition to standard benchmarks, we also evaluate our models on open-ended generation tasks using LLMs as judges, with the results shown in Table~\ref{tab:open}. 
-Specifically, we adhere to the original configurations of AlpacaEval 2.0~\citep{alpaca2.0} and Arena-Hard~\citep{li2024crowdsourced}, which leverage GPT-4-Turbo-1106 as judges for pairwise comparisons. 
-On Arena-Hard, \dsviii{} achieves an impressive win rate of over 86\% against the baseline GPT-4-0314, performing on par with top-tier models like Claude-Sonnet-3.5-1022. 
-This underscores the robust capabilities of \dsviii{}, especially in dealing with complex prompts, including coding and debugging tasks. 
-Furthermore, \dsviii{} achieves a groundbreaking milestone as the first open-source model to surpass 85\% on the Arena-Hard benchmark. 
-This achievement significantly bridges the performance gap between open-source and closed-source models, setting a new standard for what open-source models can accomplish in challenging domains.
+除标准基准外，我们还使用 LLM 作为裁判，在开放式生成任务上评估模型，结果见表~\ref{tab:open}。
+具体而言，我们遵循 AlpacaEval 2.0~\citep{alpaca2.0} 和 Arena-Hard~\citep{li2024crowdsourced} 的原始配置，它们使用 GPT-4-Turbo-1106 作为裁判进行成对比较。
+在 Arena-Hard 上，\dsviii{} 相对基线 GPT-4-0314 取得超过 86\% 的惊人胜率，表现与 Claude-Sonnet-3.5-1022 等顶级模型相当。
+这凸显了 \dsviii{} 的强大能力，尤其是在处理复杂 prompt，包括编码和调试任务，方面。
+此外，\dsviii{} 成为首个在 Arena-Hard 基准上超过 85\% 的开源模型，实现了突破性里程碑。
+这一成就显著弥合了开源与闭源模型之间的性能差距，为开源模型在挑战性领域可达到的水平设立了新标准。
 
-Similarly, \dsviii{} showcases exceptional performance on AlpacaEval 2.0, outperforming both closed-source and open-source models. 
-This demonstrates its outstanding proficiency in writing tasks and handling straightforward question-answering scenarios. 
-Notably, it surpasses DeepSeek-V2.5-0905 by a significant margin of 20\%, highlighting substantial improvements in tackling simple tasks and showcasing the effectiveness of its advancements.
+类似地，\dsviii{} 在 AlpacaEval 2.0 上展现出卓越性能，超过闭源和开源模型。
+这说明它在写作任务和处理直接问答场景方面具有出色能力。
+值得注意的是，它以 20\% 的显著幅度超过 DeepSeek-V2.5-0905，凸显其在处理简单任务上的大幅改进，并展示了这些进展的有效性。
 
-\subsubsection{\dsviii{} as a Generative Reward Model}
+\subsubsection{作为生成式 Reward Model 的 \dsviii{}}
 
-We compare the judgment ability of \dsviii{} with state-of-the-art models, namely GPT-4o and Claude-3.5. 
-Table~\ref{tab:rewardbench} presents the performance of these models in RewardBench \citep{lambert2024rewardbench}.
-\dsviii{} achieves performance on par with the best versions of GPT-4o-0806 and Claude-3.5-Sonnet-1022, while surpassing other versions. 
-Additionally, the judgment ability of \dsviii{} can also be enhanced by the voting technique. 
-Therefore, we employ \dsviii{} along with voting to offer self-feedback on open-ended questions, thereby improving the effectiveness and robustness of the alignment process.
+我们将 \dsviii{} 的判断能力与 state-of-the-art 模型，即 GPT-4o 和 Claude-3.5，进行比较。
+表~\ref{tab:rewardbench} 给出了这些模型在 RewardBench \citep{lambert2024rewardbench} 上的性能。
+\dsviii{} 取得了与 GPT-4o-0806 和 Claude-3.5-Sonnet-1022 最佳版本相当的性能，同时超过其他版本。
+此外，\dsviii{} 的判断能力还可以通过投票技术增强。
+因此，我们使用 \dsviii{} 结合投票为开放式问题提供自反馈，从而提升对齐过程的有效性和鲁棒性。
 
 \begin{table}[t]
     \centering
@@ -1151,25 +1151,25 @@ Therefore, we employ \dsviii{} along with voting to offer self-feedback on open-
     \dsviii{} (maj@6) & 96.9 & 82.6 & 89.5 & 89.2 & 89.6\\
     \bottomrule
     \end{tabular}
-    \caption{Performances of GPT-4o, Claude-3.5-sonnet and \dsviii{} on RewardBench.}
+    \caption{GPT-4o、Claude-3.5-sonnet 和 \dsviii{} 在 RewardBench 上的性能。}
     \label{tab:rewardbench} 
 \end{table}
 
-\subsection{Discussion}
+\subsection{讨论}
 
-\subsubsection{Distillation from DeepSeek-R1} 
+\subsubsection{来自 DeepSeek-R1 的蒸馏}
 
-We ablate the contribution of distillation from DeepSeek-R1 based on DeepSeek-V2.5. 
-The baseline is trained on short CoT data, whereas its competitor uses data generated by the expert checkpoints described above. 
+我们基于 DeepSeek-V2.5 消融来自 DeepSeek-R1 的蒸馏贡献。
+基线在短 CoT 数据上训练，而对比模型使用由上述专家 checkpoints 生成的数据。
 
-Table~\ref{tab:distill} demonstrates the effectiveness of the distillation data, showing significant improvements in both LiveCodeBench and MATH-500 benchmarks. 
-Our experiments reveal an interesting trade-off: the distillation leads to better performance but also substantially increases the average response length. 
-To maintain a balance between model accuracy and computational efficiency, we carefully selected optimal settings for \dsviii{} in distillation.
+表~\ref{tab:distill} 展示了蒸馏数据的有效性，在 LiveCodeBench 和 MATH-500 基准上均带来显著提升。
+我们的实验揭示了一个有趣的折中：蒸馏带来更好性能，但也显著增加平均回答长度。
+为在模型准确率与计算效率之间保持平衡，我们为 \dsviii{} 的蒸馏谨慎选择了最优设置。
 
-Our research suggests that knowledge distillation from reasoning models presents a promising direction for post-training optimization. 
-While our current work focuses on distilling data from mathematics and coding domains, this approach shows potential for broader applications across various task domains. 
-The effectiveness demonstrated in these specific areas indicates that long-CoT distillation could be valuable for enhancing model performance in other cognitive tasks requiring complex reasoning. 
-Further exploration of this approach across different domains remains an important direction for future research.
+我们的研究表明，从推理模型进行知识蒸馏是 post-training 优化的一个有前景方向。
+尽管当前工作聚焦于从数学和编码领域蒸馏数据，该方法也展现出在多种任务领域更广泛应用的潜力。
+在这些特定领域中展现出的有效性表明，long-CoT 蒸馏对于提升其他需要复杂推理的认知任务中的模型性能可能具有价值。
+在不同领域进一步探索该方法仍是未来研究的重要方向。
 
 \begin{table}[t]
     \centering
@@ -1184,60 +1184,60 @@ Further exploration of this approach across different domains remains an importa
     \bottomrule
     \end{tabular}
     \caption{
-    The contribution of distillation from DeepSeek-R1. 
-    The evaluation settings of LiveCodeBench and MATH-500 are the same as in Table~\ref{tab:chat}.
+    来自 DeepSeek-R1 的蒸馏贡献。
+    LiveCodeBench 和 MATH-500 的评估设置与表~\ref{tab:chat} 中相同。
     }
     \label{tab:distill} 
 \end{table}
 
 \subsubsection{Self-Rewarding}
 
-Rewards play a pivotal role in RL, steering the optimization process. 
-In domains where verification through external tools is straightforward, such as some coding or mathematics scenarios, RL demonstrates exceptional efficacy.
-However, in more general scenarios, constructing a feedback mechanism through hard coding is impractical. 
-During the development of \dsviii{}, for these broader contexts, we employ the constitutional AI approach~\citep{bai2022constitutional}, leveraging the voting evaluation results of \dsviii{} itself as a feedback source. 
-This method has produced notable alignment effects, significantly enhancing the performance of \dsviii{} in subjective evaluations. 
-By integrating additional constitutional inputs, \dsviii{} can optimize towards the constitutional direction. 
-We believe that this paradigm, which combines supplementary information with LLMs as a feedback source, is of paramount importance. 
-The LLM serves as a versatile processor capable of transforming unstructured information from diverse scenarios into rewards, ultimately facilitating the self-improvement of LLMs. 
-Beyond self-rewarding, we are also dedicated to uncovering other general and scalable rewarding methods to consistently advance the model capabilities in general scenarios.
+Reward 在 RL 中发挥关键作用，引导优化过程。
+在可以通过外部工具直接验证的领域，例如某些代码或数学场景，RL 展现出极高效果。
+然而，在更一般的场景中，通过硬编码构建反馈机制并不现实。
+在 \dsviii{} 的开发过程中，对于这些更广泛的上下文，我们采用 constitutional AI 方法~\citep{bai2022constitutional}，使用 \dsviii{} 自身的投票评估结果作为反馈来源。
+该方法产生了显著的对齐效果，显著提升了 \dsviii{} 在主观评估中的性能。
+通过整合额外 constitutional 输入，\dsviii{} 可以朝 constitutional 方向优化。
+我们认为，将补充信息与作为反馈来源的 LLM 结合起来的这一范式非常重要。
+LLM 充当通用处理器，能够将多样场景中的非结构化信息转化为 reward，最终促进 LLM 的自我改进。
+除 self-rewarding 外，我们也致力于发现其他通用且可扩展的奖励方法，以持续提升模型在一般场景中的能力。
 
-\subsubsection{Multi-Token Prediction Evaluation} 
+\subsubsection{Multi-Token Prediction 评估}
 
-Instead of predicting just the next single token, \dsviii{} predicts the next 2 tokens through the MTP technique. 
-Combined with the framework of speculative decoding~\citep{speculative_google,speculative_xhm}, it can significantly accelerate the decoding speed of the model. 
-A natural question arises concerning the acceptance rate of the additionally predicted token. 
-Based on our evaluation, the acceptance rate of the second token prediction ranges between 85\% and 90\% across various generation topics, demonstrating consistent reliability. 
-This high acceptance rate enables \dsviii{} to achieve a significantly improved decoding speed, delivering 1.8 times TPS (Tokens Per Second).
+\dsviii{} 并非只预测下一个单独 token，而是通过 MTP 技术预测接下来的 2 个 token。
+结合 speculative decoding 框架~\citep{speculative_google,speculative_xhm}，它可以显著加快模型的解码速度。
+一个自然的问题是额外预测 token 的接受率。
+基于我们的评估，在各种生成主题上，第二个 token 预测的接受率介于 85\% 到 90\% 之间，展现出稳定可靠性。
+这种高接受率使 \dsviii{} 能够显著提升解码速度，达到 1.8 倍 TPS (Tokens Per Second)。
 
-\section{Conclusion, Limitations, and Future Directions}
+\section{结论、局限与未来方向}
 \label{sec:conclusion}
 
-In this paper, we introduce \dsviii{}, a large MoE language model with 671B total parameters and 37B activated parameters, trained on 14.8T tokens. 
-In addition to the \dsattn{} and \dsmoe{} architectures, it also pioneers an auxiliary-loss-free strategy for load balancing and sets a multi-token prediction training objective for stronger performance.
-The training of \dsviii{} is cost-effective due to the support of FP8 training and meticulous engineering optimizations. 
-The post-training also makes a success in distilling the reasoning capability from the DeepSeek-R1 series of models.
-Comprehensive evaluations demonstrate that DeepSeek-V3 has emerged as the strongest open-source model currently available, and achieves performance comparable to leading closed-source models like GPT-4o and Claude-3.5-Sonnet. 
-Despite its strong performance, it also maintains economical training costs. 
-It requires only 2.788M H800 GPU hours for its full training, including pre-training, context length extension, and post-training. 
+本文介绍 \dsviii{}，这是一个大型 MoE 语言模型，总参数量为 671B，激活参数量为 37B，在 14.8T 个 token 上训练。
+除 \dsattn{} 和 \dsmoe{} 架构外，它还首创用于负载均衡的 auxiliary-loss-free 策略，并设置 multi-token prediction 训练目标以获得更强性能。
+得益于 FP8 训练支持和细致工程优化，\dsviii{} 的训练具有很高性价比。
+Post-training 也成功从 DeepSeek-R1 系列模型中蒸馏了推理能力。
+全面评估表明，DeepSeek-V3 已成为当前最强的开源模型，并取得了可比于 GPT-4o 和 Claude-3.5-Sonnet 等领先闭源模型的性能。
+尽管性能强劲，它仍保持了低训练成本。
+包括预训练、上下文长度扩展和 post-training 在内，其完整训练仅需 2.788M H800 GPU 小时。
 
-While acknowledging its strong performance and cost-effectiveness, we also recognize that \dsviii{} has some limitations, especially on the deployment.
-Firstly, to ensure efficient inference, the recommended deployment unit for \dsviii{} is relatively large, which might pose a burden for small-sized teams.
-Secondly, although our deployment strategy for \dsviii{} has achieved an end-to-end generation speed of more than two times that of \dsvii{}, there still remains potential for further enhancement.
-Fortunately, these limitations are expected to be naturally addressed with the development of more advanced hardware.
+在承认其强性能和高性价比的同时，我们也认识到 \dsviii{} 存在一些局限，尤其是在部署方面。
+首先，为确保高效推理，\dsviii{} 推荐的部署单元相对较大，这可能会给小型团队带来负担。
+其次，尽管我们的 \dsviii{} 部署策略已实现超过 \dsvii{} 两倍的端到端生成速度，但仍有进一步提升空间。
+幸运的是，随着更先进硬件的发展，这些局限有望自然得到解决。
 
-DeepSeek consistently adheres to the route of open-source models with longtermism, aiming to steadily approach the ultimate goal of AGI (Artificial General Intelligence).
-In the future, we plan to strategically invest in research across the following directions.
+DeepSeek 始终秉持长期主义，坚持开源模型路线，目标是稳步接近 AGI (Artificial General Intelligence) 的终极目标。
+未来，我们计划在以下方向上进行战略性研究投入。
 \begin{itemize}
     \item 
-    We will consistently study and refine our model architectures, aiming to further improve both the training and inference efficiency, striving to approach efficient support for infinite context length. 
-    Additionally, we will try to break through the architectural limitations of Transformer, thereby pushing the boundaries of its modeling capabilities.
+    我们将持续研究和改进模型架构，目标是进一步提升训练和推理效率，并努力接近对无限上下文长度的高效支持。
+    此外，我们将尝试突破 Transformer 的架构局限，从而推进其建模能力边界。
     \item 
-    We will continuously iterate on the quantity and quality of our training data, and explore the incorporation of additional training signal sources, aiming to drive data scaling across a more comprehensive range of dimensions.
+    我们将持续迭代训练数据的数量和质量，并探索引入额外训练信号来源，目标是在更全面的维度上推动数据扩展。
     \item 
-    We will consistently explore and iterate on the deep thinking capabilities of our models, aiming to enhance their intelligence and problem-solving abilities by expanding their reasoning length and depth.
+    我们将持续探索和迭代模型的深度思考能力，目标是通过扩展推理长度和深度来增强其智能和问题求解能力。
     \item 
-    We will explore more comprehensive and multi-dimensional model evaluation methods to prevent the tendency towards optimizing a fixed set of benchmarks during research, which may create a misleading impression of the model capabilities and affect our foundational assessment.
+    我们将探索更全面且多维的模型评估方法，以避免研究过程中倾向于优化固定基准集合，这种倾向可能造成对模型能力的误导性印象，并影响我们的基础评估。
 \end{itemize}
 
 \bibliography{main}
@@ -1245,9 +1245,9 @@ In the future, we plan to strategically invest in research across the following 
 \newpage
 \appendix
 
-\section*{Appendix}
+\section*{附录}
 
-\section{Contributions and Acknowledgments}
+\section{贡献与致谢}
 
 \definecolor{damaiblue}{RGB}{0, 0, 100}
 \definecolor{damaigreen}{RGB}{0, 100, 0}
@@ -1255,7 +1255,7 @@ In the future, we plan to strategically invest in research across the following 
 
 \begin{multicols}{2} % 开始两栏环境
 \noindent
-\textbf{\color{damaiblue} Research \& Engineering} \\
+\textbf{\color{damaiblue} 研究与工程} \\
 \color{damaiblue} Aixin Liu \\
 \color{damaiblue} Bing Xue \\
 \color{damaiblue} Bingxuan Wang \\
@@ -1408,7 +1408,7 @@ In the future, we plan to strategically invest in research across the following 
 \color{damaiblue} Zizheng Pan \\
 
 \noindent
-\textbf{\color{damaigreen} Data Annotation} \\
+\textbf{\color{damaigreen} 数据标注} \\
 \color{damaigreen} Bei Feng \\
 \color{damaigreen} Hui Li \\
 \color{damaigreen} J.L. Cai \\
@@ -1442,7 +1442,7 @@ In the future, we plan to strategically invest in research across the following 
 \color{damaigreen} Zhongyu Zhang \\
 
 \noindent
-\textbf{\color{damaired} Business \& Compliance} \\
+\textbf{\color{damaired} 商务与合规} \\
 \color{damaired} Dongjie Ji \\
 \color{damaired} Jian Liang \\
 \color{damaired} Jin Chen \\
@@ -1464,43 +1464,43 @@ In the future, we plan to strategically invest in research across the following 
 
 \end{multicols} % 结束两栏环境
 
-Within each role, authors are listed alphabetically by the first name. 
-Names marked with * denote individuals who have departed from our team. 
+在每个角色内，作者按名字的字母顺序列出。
+标有 * 的姓名表示已离开我们团队的成员。
 
-\section{Ablation Studies for Low-Precision Training}
+\section{低精度训练的消融研究}
 \label{app:fp8}
 
 \begin{figure}[!ht]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/fp8-v.s.-bf16.pdf}
 \caption{
-    Loss curves comparison between BF16 and FP8 training. 
-    Results are smoothed by Exponential Moving Average (EMA) with a coefficient of 0.9.
+    BF16 与 FP8 训练的损失曲线比较。
+    结果使用系数为 0.9 的 Exponential Moving Average (EMA) 进行平滑。
 }
 \label{fig:fp8_vs_bf16}
 \end{figure}
 
-\subsection{FP8 v.s. BF16 Training}
+\subsection{FP8 v.s. BF16 训练}
 \label{app:fp8_cp_bf16}
-We validate our FP8 mixed precision framework with a comparison to BF16 training on top of two baseline models across different scales. At the small scale, we train a baseline MoE model comprising approximately 16B total parameters on 1.33T tokens. 
-At the large scale, we train a baseline MoE model comprising approximately 230B total parameters on around 0.9T tokens. We show the training curves in Figure~\ref{fig:fp8_vs_bf16} and demonstrate that the relative error remains below 0.25\% with our high-precision accumulation and fine-grained quantization strategies.
+我们在两个不同规模的基线模型上，通过与 BF16 训练比较来验证 FP8 混合精度框架。在小规模设置中，我们在 1.33T 个 token 上训练一个总参数量约为 16B 的基线 MoE 模型。
+在大规模设置中，我们在约 0.9T 个 token 上训练一个总参数量约为 230B 的基线 MoE 模型。我们在图~\ref{fig:fp8_vs_bf16} 中展示训练曲线，并证明借助我们的高精度累加和细粒度量化策略，相对误差保持在 0.25\% 以下。
 
-\subsection{Discussion About Block-Wise Quantization}
+\subsection{关于 Block-Wise 量化的讨论}
 \label{app:fp8_blockwise}
-Although our tile-wise fine-grained quantization effectively mitigates the error introduced by feature outliers, it requires different groupings for activation quantization, i.e., \texttt{1x128} in forward pass and \texttt{128x1} for backward pass. 
-A similar process is also required for the activation gradient. 
-A straightforward strategy is to apply block-wise quantization per \texttt{128x128} elements like the way we quantize the model weights.
-In this way, only transposition is required for backward.
-Therefore, we conduct an experiment where all tensors associated with \texttt{Dgrad} are quantized on a block-wise basis. 
-The results reveal that the \texttt{Dgrad} operation which computes the activation gradients and back-propagates to shallow layers in a chain-like manner, is highly sensitive to precision. 
-Specifically, block-wise quantization of activation gradients leads to model divergence on an MoE model comprising approximately 16B total parameters, trained for around 300B tokens. 
-We hypothesize that this sensitivity arises because activation gradients are highly imbalanced among tokens, resulting in token-correlated outliers~\citep{int4train}. 
-These outliers cannot be effectively managed by a block-wise quantization approach.
+尽管我们的 tile-wise 细粒度量化有效缓解了特征离群值引入的误差，但它需要为激活量化采用不同分组，即前向传播中的 \texttt{1x128} 和反向传播中的 \texttt{128x1}。
+激活梯度也需要类似过程。
+一种直接策略是像量化模型权重一样，对每 \texttt{128x128} 个元素应用 block-wise 量化。
+这样，反向传播只需转置。
+因此，我们进行了一项实验，将所有与 \texttt{Dgrad} 相关的张量按 block-wise 方式量化。
+结果表明，\texttt{Dgrad} 操作高度敏感于精度，该操作计算激活梯度并以链式方式反向传播到浅层。
+具体而言，对激活梯度进行 block-wise 量化会导致一个总参数量约 16B、训练约 300B token 的 MoE 模型发散。
+我们推测，这种敏感性源于激活梯度在 token 之间高度不均衡，从而产生 token-correlated 离群值~\citep{int4train}。
+这些离群值无法通过 block-wise 量化方法得到有效处理。
 
-\section{Expert Specialization Patterns of the 16B Aux-Loss-Based and Aux-Loss-Free Models}
+\section{16B Aux-Loss-Based 与 Aux-Loss-Free 模型的专家专门化模式}
 \label{app:detailed_expert_load}
-We record the expert load of the 16B auxiliary-loss-based baseline and the auxiliary-loss-free model on the Pile test set. 
-The auxiliary-loss-free model tends to have greater expert specialization across all layers, as demonstrated in Figure~\ref{fig:detailed_expert_load}.
+我们记录了 16B auxiliary-loss-based 基线和 auxiliary-loss-free 模型在 Pile 测试集上的专家负载。
+如图~\ref{fig:detailed_expert_load} 所示，auxiliary-loss-free 模型在所有层上都倾向于具有更强的专家专门化。
 
 \begin{figure}[!t]
     \subfigure[Layers 1-7]{
@@ -1535,9 +1535,9 @@ The auxiliary-loss-free model tends to have greater expert specialization across
         \includegraphics[width=0.95\linewidth]{figures/relative_expert_load_multi_25-26.pdf}
     }
     \caption{
-        Expert load of auxiliary-loss-free and auxiliary-loss-based models on three domains in the Pile test set. 
-        The auxiliary-loss-free model shows greater expert specialization patterns than the auxiliary-loss-based one.
-        The relative expert load denotes the ratio between the actual expert load and the theoretically balanced expert load. 
+        Auxiliary-loss-free 和 auxiliary-loss-based 模型在 Pile 测试集三个领域上的专家负载。
+        Auxiliary-loss-free 模型比 auxiliary-loss-based 模型展现出更强的专家专门化模式。
+        相对专家负载表示实际专家负载与理论均衡专家负载之间的比值。
     }
 \label{fig:detailed_expert_load}
 \end{figure}
@@ -1545,4 +1545,3 @@ The auxiliary-loss-free model tends to have greater expert specialization across
 \newpage
 
 \end{document}
-
